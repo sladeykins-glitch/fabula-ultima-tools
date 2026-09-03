@@ -39,6 +39,9 @@ input[type="checkbox"] { width: auto; accent-color: #6366f1; }
 .panel label { display: grid; gap: 7px; margin: 14px 0; color: #cbd5e1; }
 .preview { min-height: 420px; }
 .preview > .card { box-shadow: none; background: rgba(8,15,29,.65); }
+.subpanel { margin: 18px 0; padding: 14px; border: 1px solid #334155; border-radius: 14px; background: rgba(8,15,29,.5); }
+.materialBox { margin: 12px 0; padding: 12px; border: 1px solid #3f4c3f; border-radius: 12px; background: rgba(21,43,31,.35); }
+.materialBox p { margin: 6px 0; }
 .empty { min-height: 180px; display: grid; place-items: center; text-align: center; color: #94a3b8; border: 1px dashed #334155; border-radius: 14px; padding: 24px; }
 .buttonRow { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
 details { margin-top: 12px; }
