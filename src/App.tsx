@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { damageTypes, generateMonster, Monster, Rank, Species, speciesRules } from './rules'
+import { damageTypes, generateMonster, Monster, Rank, Species, speciesRules, CombatStyle } from './rules'
 import { DamageType, GeneratedItem, generateItem, ItemType } from './items'
 import { generateCustomWeapon } from './customWeapons'
 import { GeneratedMaterial, generateMaterial, MaterialFunction, MaterialNature } from './materials'
@@ -9,6 +9,7 @@ type AppItem = GeneratedItem & { material?: GeneratedMaterial; origin?: string }
 
 const species: Species[] = ['Beast','Construct','Demon','Elemental','Humanoid','Monster','Plant','Undead']
 const ranks: Rank[] = ['Soldier','Elite','Champion']
+const combatStyles: CombatStyle[] = ['Mixed','Brute','Defender','Controller','Spellcaster','Assassin','Support']
 const materialNatures: (MaterialNature|'Random')[] = ['Random','Animal','Fungal','Incorporeal','Liquid','Artificial','Mineral','Plant']
 const materialFunctions: (MaterialFunction|'Random')[] = ['Random','Agility and Precision','Damage and Power','Protection','Recovery','Sabotage','Support']
 
@@ -47,26 +48,44 @@ export default function App() {
   )
 }
 
+function MonsterCard({ monster, onDelete }: { monster: Monster; onDelete?:()=>void }) {
+  const skills = monster.skills || []
+  const spells = monster.spells || []
+  const notes = monster.notes || []
+  const attacks = monster.attacks || []
+  const affinities = monster.affinities || Object.fromEntries(damageTypes.map(t => [t, 'Normal'])) as Monster['affinities']
+  return <article className="card monsterCard">
+    <div className="cardTitle">
+      <div><span className="source">{monster.source}</span><h2>{monster.name}</h2></div>
+      {onDelete && <button className="danger" onClick={onDelete}>Delete</button>}
+    </div>
+    <p className="muted">Lv {monster.level} · {monster.rank} · {monster.species}{monster.combatStyle ? ` · ${monster.combatStyle}` : ''}</p>
+    <div className="stats"><b>HP {monster.hp}</b><b>Crisis {monster.crisis ?? Math.floor(monster.hp/2)}</b><b>MP {monster.mp}</b><b>Init {monster.initiative}</b><b>DEF {monster.defense}</b><b>M.DEF {monster.magicDefense}</b><b>Turns {monster.turnsPerRound || 1}</b></div>
+    <div className="dice"><span>DEX d{monster.attributes.dex}</span><span>INS d{monster.attributes.ins}</span><span>MIG d{monster.attributes.mig}</span><span>WLP d{monster.attributes.wlp}</span><span>ACC +{monster.accuracyBonus ?? Math.floor(monster.level/10)}</span><span>MAG +{monster.magicBonus ?? Math.floor(monster.level/10)}</span></div>
+    <p><strong>Traits:</strong> {monster.traits.join(', ')}</p>
+    <div className="affinities">{damageTypes.filter(t=>affinities[t] !== 'Normal').map(t=><span key={t}>{t}: {affinities[t]}</span>)}</div>
+    <h3>Basic Attacks</h3>
+    {attacks.map((a,i)=><div key={i} className="attack"><b>{a.name}</b> — {a.formula} {a.damageType}{a.effect && <div className="attackEffect">Effect: {a.effect}</div>}</div>)}
+    {skills.length > 0 && <><h3>NPC Skills</h3><div className="skillList">{skills.map((sk,i)=><div className="skillBox" key={`${sk.name}-${i}`}><strong>{sk.name}</strong><span>{sk.summary}</span></div>)}</div></>}
+    {spells.length > 0 && <><h3>Spells</h3><div className="spellList">{spells.map((sp,i)=><div className="spellBox" key={`${sp.name}-${i}`}><div className="spellTitle"><strong>{sp.name}</strong><span>{sp.mp} MP</span></div><div className="muted">{sp.target} · {sp.duration}</div><div>{sp.effect}</div></div>)}</div></>}
+    {notes.length > 0 && <details><summary>Rules / generation notes</summary>{notes.map((n,i)=><p className="note" key={i}>{n}</p>)}</details>}
+  </article>
+}
+
 function MonsterDatabase({ monsters, setMonsters, search, setSearch }: { monsters: Monster[]; setMonsters: React.Dispatch<React.SetStateAction<Monster[]>>; search: string; setSearch: (v:string)=>void }) {
-  const filtered = useMemo(() => monsters.filter(m => `${m.name} ${m.species} ${m.rank} ${m.traits.join(' ')}`.toLowerCase().includes(search.toLowerCase())), [monsters, search])
+  const filtered = useMemo(() => monsters.filter(m => {
+    const skills = (m.skills || []).map(s => `${s.name} ${s.summary}`).join(' ')
+    const spells = (m.spells || []).map(s => `${s.name} ${s.effect}`).join(' ')
+    const attacks = (m.attacks || []).map(a => `${a.name} ${a.damageType} ${a.effect || ''}`).join(' ')
+    return `${m.name} ${m.species} ${m.rank} ${m.combatStyle || ''} ${m.traits.join(' ')} ${skills} ${spells} ${attacks}`.toLowerCase().includes(search.toLowerCase())
+  }), [monsters, search])
   return <section>
     <div className="toolbar">
-      <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search monsters..." />
+      <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search monsters, skills, spells, attacks..." />
       <span>{filtered.length} entries</span>
     </div>
     {filtered.length === 0 ? <Empty text="No monsters saved yet. Generate one to start your database." /> : <div className="grid">
-      {filtered.map(m => <article className="card" key={m.id}>
-        <div className="cardTitle"><div><span className="source">{m.source}</span><h2>{m.name}</h2></div><button className="danger" onClick={()=>setMonsters(prev=>prev.filter(x=>x.id!==m.id))}>Delete</button></div>
-        <p className="muted">Lv {m.level} · {m.rank} · {m.species}</p>
-        <div className="stats"><b>HP {m.hp}</b><b>MP {m.mp}</b><b>Init {m.initiative}</b><b>DEF {m.defense}</b><b>M.DEF {m.magicDefense}</b></div>
-        <div className="dice"><span>DEX d{m.attributes.dex}</span><span>INS d{m.attributes.ins}</span><span>MIG d{m.attributes.mig}</span><span>WLP d{m.attributes.wlp}</span></div>
-        <p><strong>Traits:</strong> {m.traits.join(', ')}</p>
-        <div className="affinities">{damageTypes.filter(t=>m.affinities[t] !== 'Normal').map(t=><span key={t}>{t}: {m.affinities[t]}</span>)}</div>
-        <h3>Basic attacks</h3>
-        {m.attacks.map((a,i)=><p key={i} className="attack"><b>{a.name}</b> — {a.formula} {a.damageType}</p>)}
-        <h3>Rules</h3>
-        {m.notes.map((n,i)=><p className="note" key={i}>{n}</p>)}
-      </article>)}
+      {filtered.map(m => <MonsterCard key={m.id} monster={m} onDelete={()=>setMonsters(prev=>prev.filter(x=>x.id!==m.id))} />)}
     </div>}
   </section>
 }
@@ -77,9 +96,10 @@ function MonsterGenerator({ onSave }: { onSave: (m:Monster)=>void }) {
   const [soldierEquivalent, setSoldierEquivalent] = useState(3)
   const [sp, setSp] = useState<Species>('Monster')
   const [complexity, setComplexity] = useState<'Simple'|'Standard'|'Crunchy'>('Standard')
+  const [combatStyle, setCombatStyle] = useState<CombatStyle>('Mixed')
   const [result, setResult] = useState<Monster|null>(null)
 
-  const make = () => setResult(generateMonster({ level, rank, soldierEquivalent, species: sp, complexity }))
+  const make = () => setResult(generateMonster({ level, rank, soldierEquivalent, species: sp, complexity, combatStyle }))
 
   return <section className="twoCol">
     <div className="panel">
@@ -90,15 +110,14 @@ function MonsterGenerator({ onSave }: { onSave: (m:Monster)=>void }) {
       <label>Species<select value={sp} onChange={e=>setSp(e.target.value as Species)}>{species.map(s=><option key={s}>{s}</option>)}</select></label>
       <p className="note">{speciesRules[sp].note}</p>
       <label>Complexity<select value={complexity} onChange={e=>setComplexity(e.target.value as typeof complexity)}><option>Simple</option><option>Standard</option><option>Crunchy</option></select></label>
+      <p className="muted smallText">Complexity is a generator convenience, not an official NPC rule. It changes how involved the generated skill set tends to be.</p>
+      <label>Combat style<select value={combatStyle} onChange={e=>setCombatStyle(e.target.value as CombatStyle)}>{combatStyles.map(style=><option key={style}>{style}</option>)}</select></label>
+      <p className="muted smallText">Combat style biases legal skill and attack choices without granting extra bonuses.</p>
       <button className="primary" onClick={make}>Generate Monster</button>
     </div>
     <div className="panel preview">
       {!result ? <Empty text="Choose your options and generate a monster." /> : <>
-        <span className="source">Generated</span><h2>{result.name}</h2>
-        <p className="muted">Lv {result.level} · {result.rank} · {result.species}</p>
-        <div className="stats"><b>HP {result.hp}</b><b>MP {result.mp}</b><b>Init {result.initiative}</b><b>Skills {result.skillBudget}</b><b>Turns {result.turnsPerRound}</b></div>
-        <p><strong>Traits:</strong> {result.traits.join(', ')}</p>
-        {result.attacks.map((a,i)=><p className="attack" key={i}><b>{a.name}</b> — {a.formula} {a.damageType}</p>)}
+        <MonsterCard monster={result} />
         <div className="buttonRow"><button onClick={make}>Reroll</button><button className="primary" onClick={()=>onSave(result)}>Save to Database</button></div>
       </>}
     </div>
@@ -142,7 +161,7 @@ function ItemCard({ item, onDelete }: { item: AppItem; onDelete?:()=>void }) {
     {(item.type === 'Armor' || item.type === 'Shield') && <div className="stats"><b>DEF {item.defense}</b><b>M.DEF {item.magicDefense}</b><b>Init {item.initiative && item.initiative > 0 ? '+' : ''}{item.initiative || 0}</b></div>}
     {item.quality && <p><strong>Quality / Customizations:</strong> {item.quality}</p>}
     <p className="attack">{item.effect}</p>
-    {item.breakdown.length > 0 && <details><summary>Price / rule breakdown</summary>{item.breakdown.map((b,i)=><p className="note" key={i}>{b}</p>)}</details>}
+    {(item.breakdown?.length ?? 0) > 0 && <details><summary>Price / rule breakdown</summary>{(item.breakdown || []).map((b,i)=><p className="note" key={i}>{b}</p>)}</details>}
   </article>
 }
 
@@ -178,7 +197,7 @@ function ItemGenerator({ onSave }: { onSave: (item:AppItem)=>void }) {
         ...item,
         material,
         origin: `Crafted using ${material.name.toLowerCase()}, a ${material.nature.toLowerCase()} material selected from the Natural Fantasy material tables.`,
-        breakdown: [...item.breakdown, `Material: ${material.name} (flavour/origin; does not alter equipment cost by itself).`],
+        breakdown: [...(item.breakdown || []), `Material: ${material.name} (flavour/origin; does not alter equipment cost by itself).`],
       }
     }
 

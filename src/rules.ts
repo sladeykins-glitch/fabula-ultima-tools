@@ -4,6 +4,7 @@ export type Species = 'Beast' | 'Construct' | 'Demon' | 'Elemental' | 'Humanoid'
 export type Rank = 'Soldier' | 'Elite' | 'Champion'
 export type Affinity = 'Normal' | 'Vulnerable' | 'Resistant' | 'Immune' | 'Absorb'
 export type Complexity = 'Simple' | 'Standard' | 'Crunchy'
+export type CombatStyle = 'Mixed' | 'Brute' | 'Defender' | 'Controller' | 'Spellcaster' | 'Assassin' | 'Support'
 
 export const speciesRules: Record<Species, { startingSkills: number; note: string }> = {
   Beast: { startingSkills: 4, note: 'Cannot acquire Use Equipment.' },
@@ -13,7 +14,7 @@ export const speciesRules: Record<Species, { startingSkills: number; note: strin
   Humanoid: { startingSkills: 3, note: 'Gains Use Equipment for free.' },
   Monster: { startingSkills: 4, note: 'No additional species rule.' },
   Plant: { startingSkills: 3, note: 'Immune to dazed, shaken and enraged; choose air, bolt, fire or ice vulnerability.' },
-  Undead: { startingSkills: 2, note: 'Immune to dark and poison; immune to poisoned; vulnerable to light.' },
+  Undead: { startingSkills: 2, note: 'Immune to dark and poison; immune to poisoned; vulnerable to light. When an effect would make this NPC recover HP, its controller may instead have it lose half as many HP.' },
 }
 
 export const attributeArrays: Record<string, Die[]> = {
@@ -75,6 +76,7 @@ export interface Monster {
   skills: MonsterSkill[]
   spells: MonsterSpell[]
   notes: string[]
+  combatStyle?: CombatStyle
 }
 
 function increaseDie(die: Die): Die {
@@ -156,12 +158,22 @@ function makeSpell(level: number, rank: Rank): MonsterSpell {
   return pick(options)
 }
 
-function chooseSkillName(complexity: Complexity, species: Species, chosen: MonsterSkill[], affinities: Record<DamageType, Affinity>) {
+function chooseSkillName(complexity: Complexity, species: Species, chosen: MonsterSkill[], affinities: Record<DamageType, Affinity>, combatStyle: CombatStyle) {
   const limited = new Set(chosen.filter(s => ['Final Act', 'Flying', 'Improved Initiative', 'Use Equipment'].includes(s.name)).map(s => s.name))
   const simple = ['Improved Damage','Improved Defenses','Improved Hit Points','Damage Resistance','Damage Immunity','Status Effect Immunity','Specialized']
   const standard = [...simple,'Crisis Effect','Special Attack','Spellcaster','Unique Action','Reaction']
   const crunchy = [...standard,'Final Act','Flying','Improved Initiative']
   let pool = complexity === 'Simple' ? simple : complexity === 'Standard' ? standard : crunchy
+  const styleBias: Record<CombatStyle, string[]> = {
+    Mixed: [],
+    Brute: ['Improved Damage','Improved Damage','Special Attack','Crisis Effect'],
+    Defender: ['Improved Defenses','Improved Hit Points','Damage Resistance','Damage Immunity','Reaction'],
+    Controller: ['Special Attack','Status Effect Immunity','Spellcaster','Unique Action'],
+    Spellcaster: ['Spellcaster','Spellcaster','Specialized','Crisis Effect'],
+    Assassin: ['Improved Damage','Specialized','Improved Initiative','Special Attack'],
+    Support: ['Spellcaster','Reaction','Unique Action','Improved Defenses'],
+  }
+  pool = [...pool, ...styleBias[combatStyle].filter(name => pool.includes(name))]
   if (species !== 'Beast') pool = [...pool, 'Use Equipment']
   pool = pool.filter(name => !limited.has(name))
   if (!Object.values(affinities).some(a => a === 'Resistant' || a === 'Immune')) pool = pool.filter(n => n !== 'Damage Absorption')
@@ -175,8 +187,10 @@ export function generateMonster(options: {
   soldierEquivalent: number
   species: Species
   complexity: Complexity
+  combatStyle?: CombatStyle
 }): Monster {
   const { level, rank, species, complexity } = options
+  const combatStyle = options.combatStyle || 'Mixed'
   const soldierEquivalent = rank === 'Elite' ? 2 : rank === 'Champion' ? Math.max(2, options.soldierEquivalent) : 1
   const arrayName = pick(Object.keys(attributeArrays))
   const dice = shuffle(attributeArrays[arrayName])
@@ -212,7 +226,16 @@ export function generateMonster(options: {
 
   const attackCount = complexity === 'Simple' ? 1 : complexity === 'Standard' ? 2 : 3
   const attackNames = ['Rending Strike', 'Arc Burst', 'Crushing Blow', 'Venom Lash', 'Howling Fang', 'Runic Shot', 'Shadow Claw']
-  const pairs: [AttributeKey, AttributeKey][] = [['dex','mig'], ['dex','ins'], ['mig','mig'], ['ins','wlp'], ['dex','dex']]
+  const basePairs: [AttributeKey, AttributeKey][] = [['dex','mig'], ['dex','ins'], ['mig','mig'], ['ins','wlp'], ['dex','dex']]
+  const stylePairs: Partial<Record<CombatStyle, [AttributeKey, AttributeKey][]>> = {
+    Brute: [['mig','mig'], ['dex','mig']],
+    Defender: [['mig','mig'], ['dex','mig'], ['ins','wlp']],
+    Controller: [['ins','wlp'], ['dex','ins']],
+    Spellcaster: [['ins','wlp'], ['ins','wlp'], ['dex','ins']],
+    Assassin: [['dex','dex'], ['dex','ins'], ['dex','mig']],
+    Support: [['ins','wlp'], ['dex','ins']],
+  }
+  const pairs = combatStyle === 'Mixed' ? basePairs : [...basePairs, ...(stylePairs[combatStyle] || [])]
   const attacks: MonsterAttack[] = Array.from({ length: attackCount }, (_, i) => {
     const [a, b] = pick(pairs)
     const type = pick(damageTypes)
@@ -226,10 +249,13 @@ export function generateMonster(options: {
   const freeSkills: MonsterSkill[] = species === 'Humanoid' ? [{ name:'Use Equipment', summary:'Free from Humanoid Species; gains accessory, armor, main-hand and off-hand equipment slots.' }] : []
 
   for (let i = 0; i < budget; i++) {
-    let skillName = chooseSkillName(complexity, species, skills, affinities)
+    let skillName = chooseSkillName(complexity, species, skills, affinities, combatStyle)
 
     if (skillName === 'Improved Damage') {
-      const attack = pick(attacks)
+      const alreadyImproved = new Set(skills.filter(s => s.name === skillName).map(s => s.summary.split(' deals 5 extra damage.')[0]))
+      const eligible = attacks.filter(a => !alreadyImproved.has(a.name))
+      if (!eligible.length) { i--; continue }
+      const attack = pick(eligible)
       const match = attack.formula.match(/HR \+ (\d+)/)
       if (match) attack.formula = attack.formula.replace(/HR \+ \d+/, `HR + ${Number(match[1]) + 5}`)
       skills.push({ name:skillName, summary:`${attack.name} deals 5 extra damage.` })
@@ -246,10 +272,14 @@ export function generateMonster(options: {
       skills.push({ name:skillName, summary:'+4 Initiative.' })
     } else if (skillName === 'Damage Resistance') {
       const [a,b] = sampleTwo(damageTypes)
-      for (const t of [a,b]) affinities[t] = affinities[t] === 'Vulnerable' ? 'Normal' : 'Resistant'
+      for (const t of [a,b]) {
+        if (affinities[t] === 'Vulnerable') affinities[t] = 'Normal'
+        else if (affinities[t] === 'Normal') affinities[t] = 'Resistant'
+      }
       skills.push({ name:skillName, summary:`Resistance to ${a} and ${b}; a Species-caused Vulnerability is removed instead.` })
     } else if (skillName === 'Damage Immunity') {
-      const eligible = damageTypes.filter(t => affinities[t] !== 'Vulnerable')
+      const eligible = damageTypes.filter(t => affinities[t] === 'Normal' || affinities[t] === 'Resistant')
+      if (!eligible.length) { i--; continue }
       const t = pick(eligible)
       affinities[t] = 'Immune'
       skills.push({ name:skillName, summary:`Immunity to ${t} damage.` })
@@ -327,6 +357,6 @@ export function generateMonster(options: {
     defense, magicDefense,
     accuracyBonus, magicBonus, levelDamageBonus: base.levelDamageBonus,
     turnsPerRound, skillBudget: budget,
-    affinities, attacks, skills: allSkills, spells, notes,
+    affinities, attacks, skills: allSkills, spells, notes, combatStyle,
   }
 }

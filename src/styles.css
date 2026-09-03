@@ -54,3 +54,13 @@ summary { cursor: pointer; color: #a5b4fc; font-weight: 700; }
   .compactSelect { width: 100%; }
   .preview { min-height: 260px; }
 }
+.smallText { font-size: .86rem; margin-top: -6px; }
+.monsterCard h3 { margin-top: 18px; }
+.attackEffect { margin-top: 6px; color: #cbd5e1; font-size: .9rem; }
+.skillList, .spellList { display: grid; gap: 8px; }
+.skillBox, .spellBox { padding: 10px 11px; border: 1px solid #334155; border-radius: 10px; background: rgba(8,15,29,.62); }
+.skillBox { display: grid; gap: 4px; }
+.skillBox span { color: #cbd5e1; }
+.spellTitle { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 5px; }
+.spellTitle span { color: #a5b4fc; font-size: .85rem; font-weight: 800; }
+.preview > .monsterCard { box-shadow: none; background: rgba(8,15,29,.65); }
