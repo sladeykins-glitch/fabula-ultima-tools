@@ -22,19 +22,29 @@ function shuffle<T>(values: readonly T[]): T[] {
   return [...values].sort(() => Math.random() - 0.5)
 }
 
-function buildCustomizationSet(allowTransforming: boolean): CustomWeaponCustomization[] {
-  // A custom weapon receives exactly three customization slots. Quick consumes two.
-  // Powerful cannot coexist with Quick.
-  const single: CustomWeaponCustomization[] = ['Accurate','Defense Boost','Elemental','Magic Defense Boost','Powerful']
-  if (allowTransforming) single.push('Transforming')
+function buildCustomizationSet(category: string, allowMartial: boolean, allowTransforming: boolean): CustomWeaponCustomization[] {
+  const singles: CustomWeaponCustomization[] = ['Accurate','Defense Boost','Elemental']
+  if (allowMartial) {
+    singles.push('Magic Defense Boost')
+    if (!['Arcane','Dagger'].includes(category)) singles.push('Powerful')
+  }
+  if (allowTransforming) singles.push('Transforming')
 
-  if (Math.random() < 0.22) {
-    const partnerPool: CustomWeaponCustomization[] = ['Accurate','Defense Boost','Elemental','Magic Defense Boost']
-    if (allowTransforming) partnerPool.push('Transforming')
+  // Quick is martial, counts as two slots, and cannot coexist with Powerful.
+  if (allowMartial && Math.random() < 0.22) {
+    const partnerPool = singles.filter(c => c !== 'Powerful')
     return ['Quick', pick(partnerPool)]
   }
 
-  return shuffle(single).slice(0, 3)
+  return shuffle(singles).slice(0, 3)
+}
+
+function forceTransforming(set: CustomWeaponCustomization[]): CustomWeaponCustomization[] {
+  if (set.includes('Transforming')) return set
+  const copy = [...set]
+  const replaceIndex = copy.includes('Quick') ? 1 : Math.max(0, copy.length - 1)
+  copy[replaceIndex] = 'Transforming'
+  return copy
 }
 
 function applyForm(category: string, range: 'Melee'|'Ranged', accuracy: 'DEX + INS'|'DEX + MIG', customizations: CustomWeaponCustomization[], preferredDamageType: DamageType|'random') {
@@ -78,16 +88,10 @@ export function generateCustomWeapon(options: {
   const allowTransforming = options.allowTransforming !== false
   const preferred = options.preferredDamageType || 'random'
 
-  let customizations = buildCustomizationSet(allowTransforming)
-  if (!allowMartial) {
-    customizations = shuffle(['Accurate','Defense Boost','Elemental','Transforming'] as CustomWeaponCustomization[])
-      .filter(c => allowTransforming || c !== 'Transforming')
-      .slice(0, 3)
-  }
-
   const category = pick(categories)
   const range = pick(['Melee','Ranged'] as const)
   const accuracy = pick(['DEX + INS','DEX + MIG'] as const)
+  const customizations = buildCustomizationSet(category, allowMartial, allowTransforming)
   const form1 = applyForm(category, range, accuracy, customizations, preferred)
 
   const transforming = customizations.includes('Transforming')
@@ -96,39 +100,35 @@ export function generateCustomWeapon(options: {
     'Custom weapon base: 300z',
     'Always two-handed and occupies both hand slots.',
     `Category: ${category}; ${range}; Accuracy [${accuracy}]; base damage HR + 5 physical.`,
-    `Customizations (${customizations.includes('Quick') ? '3 slots; Quick counts as 2' : '3 slots'}): ${customizations.join(', ')}`,
+    `Customizations (${customizations.includes('Quick') ? 'Quick uses two of the three slots' : 'three one-slot customizations'}): ${customizations.join(', ')}`,
   ]
-  if (transforming) breakdown.push('Transforming: +100z; the second form costs no additional zenit and shares any later rare Quality/modifications.')
+  if (transforming) breakdown.push('Transforming: +100z; the second form costs no additional zenit and any later rare Quality/modification applies to both forms.')
 
-  let effectParts = [...form1.effects]
+  const effectParts = [...form1.effects]
   let baseItem = 'Atlas Custom Weapon'
+  let martial = form1.martial
 
   if (transforming) {
-    const secondSet = buildCustomizationSet(true)
-      .filter(c => c !== 'Quick' || !customizations.includes('Powerful'))
-    if (!secondSet.includes('Transforming')) {
-      const replaceIndex = secondSet.includes('Quick') ? 1 : 2
-      secondSet[replaceIndex] = 'Transforming'
-    }
     const category2 = pick(categories)
     const range2 = pick(['Melee','Ranged'] as const)
     const accuracy2 = pick(['DEX + INS','DEX + MIG'] as const)
+    const secondSet = forceTransforming(buildCustomizationSet(category2, allowMartial, true))
     const form2 = applyForm(category2, range2, accuracy2, secondSet, preferred)
+
     breakdown.push(`Form II: ${category2}; ${range2}; [${accuracy2}]${form2.accuracyBonus ? ` +${form2.accuracyBonus}` : ''}; HR + ${form2.damage} ${form2.damageType}; customizations: ${secondSet.join(', ')}.`)
     effectParts.push(`Transforming Form II: ${category2}, ${range2}, [${accuracy2}]${form2.accuracyBonus ? ` +${form2.accuracyBonus}` : ''}, HR + ${form2.damage} ${form2.damageType}.`)
     effectParts.push(...form2.effects)
     baseItem = 'Atlas Transforming Custom Weapon'
-    form1.martial = form1.martial || form2.martial
+    martial = martial || form2.martial
   }
 
-  const name = `${pick(prefixes)} ${pick(nouns)}`
   return {
     id: crypto.randomUUID(),
-    name,
+    name: `${pick(prefixes)} ${pick(nouns)}`,
     type: 'Weapon',
     source: 'Generated',
     cost,
-    martial: form1.martial,
+    martial,
     baseItem,
     category: form1.category,
     handedness: 'Two-handed',
