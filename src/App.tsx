@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { damageTypes, generateMonster, Monster, Rank, Species, speciesRules } from './rules'
 import { DamageType, GeneratedItem, generateItem, ItemType } from './items'
+import { generateCustomWeapon } from './customWeapons'
 
 type Tab = 'Monster Database' | 'Monster Generator' | 'Item Database' | 'Item Generator'
 
@@ -116,7 +117,7 @@ function ItemDatabase({ items, setItems }: { items: GeneratedItem[]; setItems: R
       </select>
       <span>{filtered.length} entries</span>
     </div>
-    {filtered.length===0 ? <Empty text="No matching items saved yet. Generate one to start your database."/> : <div className="grid">{filtered.map(item=><ItemCard item={item} onDelete={()=>setItems(prev=>prev.filter(x=>x.id!==item.id))} />)}</div>}
+    {filtered.length===0 ? <Empty text="No matching items saved yet. Generate one to start your database."/> : <div className="grid">{filtered.map(item=><ItemCard key={item.id} item={item} onDelete={()=>setItems(prev=>prev.filter(x=>x.id!==item.id))} />)}</div>}
   </section>
 }
 
@@ -132,7 +133,7 @@ function ItemCard({ item, onDelete }: { item: GeneratedItem; onDelete?:()=>void 
       <b>{item.handedness}</b><b>{item.range}</b><b>{item.accuracy}{item.accuracyBonus ? ` +${item.accuracyBonus}` : ''}</b><b>HR + {item.damage}</b><b>{item.damageType}</b>
     </div>}
     {(item.type === 'Armor' || item.type === 'Shield') && <div className="stats"><b>DEF {item.defense}</b><b>M.DEF {item.magicDefense}</b><b>Init {item.initiative && item.initiative > 0 ? '+' : ''}{item.initiative || 0}</b></div>}
-    {item.quality && <p><strong>Quality:</strong> {item.quality}</p>}
+    {item.quality && <p><strong>Quality / Customizations:</strong> {item.quality}</p>}
     <p className="attack">{item.effect}</p>
     {item.breakdown.length > 0 && <details><summary>Price / rule breakdown</summary>{item.breakdown.map((b,i)=><p className="note" key={i}>{b}</p>)}</details>}
   </article>
@@ -140,21 +141,32 @@ function ItemCard({ item, onDelete }: { item: GeneratedItem; onDelete?:()=>void 
 
 function ItemGenerator({ onSave }: { onSave: (item:GeneratedItem)=>void }) {
   const [type, setType] = useState<ItemType>('Weapon')
+  const [weaponMethod, setWeaponMethod] = useState<'Core Rare'|'Atlas Custom'>('Core Rare')
   const [maxCost, setMaxCost] = useState(1500)
   const [allowMartial, setAllowMartial] = useState(true)
+  const [allowTransforming, setAllowTransforming] = useState(true)
   const [damageType, setDamageType] = useState<DamageType|'random'>('random')
   const [result, setResult] = useState<GeneratedItem|null>(null)
 
-  const generate = () => setResult(generateItem({ type, maxCost, allowMartial, preferredDamageType:damageType }))
+  const generate = () => {
+    if (type === 'Weapon' && weaponMethod === 'Atlas Custom') {
+      setResult(generateCustomWeapon({ allowMartial, allowTransforming, preferredDamageType:damageType }))
+    } else {
+      setResult(generateItem({ type, maxCost, allowMartial, preferredDamageType:damageType }))
+    }
+  }
 
   return <section className="twoCol">
     <div className="panel">
-      <h2>Core Rare Item Generator</h2>
-      <p className="muted">Uses the Core Rulebook base equipment, official rare-item modification prices, and official Quality costs. Atlas Custom Weapons and Natural Fantasy materials are the next expansion.</p>
+      <h2>Item Generator</h2>
+      <p className="muted">Core rare equipment and the High Fantasy Atlas custom-weapon framework now share the same item database.</p>
       <label>Item type<select value={type} onChange={e=>{ setType(e.target.value as ItemType); setResult(null) }}><option>Weapon</option><option>Armor</option><option>Shield</option><option>Accessory</option></select></label>
-      <label>Maximum cost <strong>{maxCost}z</strong><input type="range" min="500" max="3000" step="100" value={maxCost} onChange={e=>setMaxCost(Number(e.target.value))}/></label>
+      {type === 'Weapon' && <label>Weapon system<select value={weaponMethod} onChange={e=>{ setWeaponMethod(e.target.value as 'Core Rare'|'Atlas Custom'); setResult(null) }}><option>Core Rare</option><option>Atlas Custom</option></select></label>}
+      {(type !== 'Weapon' || weaponMethod === 'Core Rare') && <label>Maximum cost <strong>{maxCost}z</strong><input type="range" min="500" max="3000" step="100" value={maxCost} onChange={e=>setMaxCost(Number(e.target.value))}/></label>}
       <label className="checkRow"><input type="checkbox" checked={allowMartial} onChange={e=>setAllowMartial(e.target.checked)}/><span>Allow martial equipment</span></label>
+      {type === 'Weapon' && weaponMethod === 'Atlas Custom' && <label className="checkRow"><input type="checkbox" checked={allowTransforming} onChange={e=>setAllowTransforming(e.target.checked)}/><span>Allow Transforming custom weapons</span></label>}
       {type === 'Weapon' && <label>Damage type<select value={damageType} onChange={e=>setDamageType(e.target.value as DamageType|'random')}><option value="random">Random</option><option value="physical">Physical</option><option value="air">Air</option><option value="bolt">Bolt</option><option value="dark">Dark</option><option value="earth">Earth</option><option value="fire">Fire</option><option value="ice">Ice</option><option value="light">Light</option><option value="poison">Poison</option></select></label>}
+      {type === 'Weapon' && weaponMethod === 'Atlas Custom' && <p className="note">Atlas custom weapons start at 300z, are always two-handed, use DEX+INS or DEX+MIG, deal HR+5 physical before customizations, and receive three customization slots.</p>}
       <button className="primary" onClick={generate}>Generate Item</button>
     </div>
     <div className="panel preview">
