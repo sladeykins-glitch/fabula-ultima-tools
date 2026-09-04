@@ -20,15 +20,15 @@ import DatabaseCardCopyTools from './DatabaseCardCopyTools'
 import DatabaseCreateTools from './DatabaseCreateTools'
 import DatabaseToolPanel from './DatabaseToolPanel'
 import PwaTools from './PwaTools'
+import DatabaseEnhancementHub from './DatabaseEnhancementHub'
+import AdvancedSearchSyntaxTools from './AdvancedSearchSyntaxTools'
 import './styles.css'
 
 /*
- * Keep the always-mounted enhancement layer deliberately small.
- * Several optional tools previously installed independent document-wide
- * MutationObservers. With a large bestiary those observers repeatedly scanned
- * the same cards and made filtering/scrolling feel sluggish. The core workflow
- * stays mounted here; lower-value analytics/taxonomy/audit/result decorators
- * can return later as native React features without global DOM observers.
+ * Secondary filtering/taxonomy/export behavior is consolidated into one hub
+ * instead of mounting several document-wide MutationObservers independently.
+ * Advanced search syntax uses event delegation only, so the richer database
+ * workflow does not restore the observer-heavy behavior removed previously.
  */
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -50,6 +50,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <CommandPalette />
     <DatabaseCardCopyTools />
     <DatabaseCreateTools />
+    <DatabaseEnhancementHub />
+    <AdvancedSearchSyntaxTools />
     <DatabaseToolPanel />
     <PwaTools />
   </React.StrictMode>,
