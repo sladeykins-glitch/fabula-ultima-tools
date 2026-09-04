@@ -1,3 +1,4 @@
+# one-shot migration for Valdoria depth controls
 from pathlib import Path
 p=Path('src/App.tsx')
 s=p.read_text()
