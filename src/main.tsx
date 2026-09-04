@@ -5,24 +5,31 @@ import AppErrorBoundary from './AppErrorBoundary'
 import DatabaseOverlay from './DatabaseOverlay'
 import SiteBackupTools from './SiteBackupTools'
 import PwaTools from './PwaTools'
+import { ensureOfficialData } from './officialBootstrap'
 import './styles.css'
 import './performance.css'
 import './nativePagination.css'
 
-/*
- * Stability-first runtime.
- *
- * Database behavior is now implemented in React or direct editor events rather
- * than document-wide MutationObservers. Keep the mounted surface deliberately
- * small so the expanded bestiary remains responsive.
- */
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <AppErrorBoundary>
-      <App />
-    </AppErrorBoundary>
-    <DatabaseOverlay />
-    <SiteBackupTools />
-    <PwaTools />
-  </React.StrictMode>,
-)
+function renderApp() {
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <AppErrorBoundary>
+        <App />
+      </AppErrorBoundary>
+      <DatabaseOverlay />
+      <SiteBackupTools />
+      <PwaTools />
+    </React.StrictMode>,
+  )
+}
+
+async function start() {
+  try {
+    await ensureOfficialData()
+  } catch (error) {
+    console.error('Could not seed the built-in Fabula Ultima library.', error)
+  }
+  renderApp()
+}
+
+void start()
