@@ -3,26 +3,90 @@ import { createPortal } from 'react-dom'
 import './databaseBackupTools.css'
 
 type Kind = 'monster' | 'item'
+type ViewMode = 'full' | 'compact'
+type PageSize = 12 | 24 | 48 | 'all'
+
+type DatabasePreferences = {
+  favorites: string[]
+  viewMode: ViewMode
+  favoritesOnly: boolean
+  pagination: { page: number; pageSize: PageSize }
+}
 
 type BackupPayload = {
   format: 'fabula-ultima-tools-backup'
-  version: 1
+  version: 1 | 2
   kind: Kind
   exportedAt: string
   records: any[]
+  preferences?: DatabasePreferences
 }
+
+const FAVORITES_KEY = 'fu-db-favorites'
+const VIEW_KEY = 'fu-db-view-modes'
+const ONLY_KEY = 'fu-db-favorites-only'
+const PAGE_KEY = 'fu-db-pagination'
 
 function storageKey(kind: Kind) {
   return kind === 'monster' ? 'fu-monsters' : 'fu-items'
 }
 
-function readRecords(kind: Kind): any[] {
+function readJson<T>(key: string, fallback: T): T {
   try {
-    const parsed = JSON.parse(localStorage.getItem(storageKey(kind)) || '[]')
-    return Array.isArray(parsed) ? parsed : []
+    const value = localStorage.getItem(key)
+    return value ? JSON.parse(value) : fallback
   } catch {
-    return []
+    return fallback
   }
+}
+
+function readRecords(kind: Kind): any[] {
+  const parsed = readJson<any[]>(storageKey(kind), [])
+  return Array.isArray(parsed) ? parsed : []
+}
+
+function readPreferences(kind: Kind): DatabasePreferences {
+  const favorites = readJson<Record<Kind, string[]>>(FAVORITES_KEY, { monster: [], item: [] })
+  const views = readJson<Record<Kind, ViewMode>>(VIEW_KEY, { monster: 'full', item: 'full' })
+  const only = readJson<Record<Kind, boolean>>(ONLY_KEY, { monster: false, item: false })
+  const pagination = readJson<Record<Kind, { page: number; pageSize: PageSize }>>(PAGE_KEY, {
+    monster: { page: 1, pageSize: 24 },
+    item: { page: 1, pageSize: 24 },
+  })
+  return {
+    favorites: Array.isArray(favorites[kind]) ? favorites[kind] : [],
+    viewMode: views[kind] === 'compact' ? 'compact' : 'full',
+    favoritesOnly: !!only[kind],
+    pagination: {
+      page: Math.max(1, Number(pagination[kind]?.page) || 1),
+      pageSize: pagination[kind]?.pageSize || 24,
+    },
+  }
+}
+
+function restorePreferences(kind: Kind, preferences: DatabasePreferences) {
+  const favorites = readJson<Record<Kind, string[]>>(FAVORITES_KEY, { monster: [], item: [] })
+  favorites[kind] = Array.isArray(preferences.favorites) ? preferences.favorites.filter(value => typeof value === 'string') : []
+  localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites))
+
+  const views = readJson<Record<Kind, ViewMode>>(VIEW_KEY, { monster: 'full', item: 'full' })
+  views[kind] = preferences.viewMode === 'compact' ? 'compact' : 'full'
+  localStorage.setItem(VIEW_KEY, JSON.stringify(views))
+
+  const only = readJson<Record<Kind, boolean>>(ONLY_KEY, { monster: false, item: false })
+  only[kind] = !!preferences.favoritesOnly
+  localStorage.setItem(ONLY_KEY, JSON.stringify(only))
+
+  const pagination = readJson<Record<Kind, { page: number; pageSize: PageSize }>>(PAGE_KEY, {
+    monster: { page: 1, pageSize: 24 },
+    item: { page: 1, pageSize: 24 },
+  })
+  const pageSize = preferences.pagination?.pageSize
+  pagination[kind] = {
+    page: Math.max(1, Number(preferences.pagination?.page) || 1),
+    pageSize: pageSize === 'all' || pageSize === 12 || pageSize === 24 || pageSize === 48 ? pageSize : 24,
+  }
+  localStorage.setItem(PAGE_KEY, JSON.stringify(pagination))
 }
 
 function detectDatabase(): { kind: Kind; target: HTMLElement } | null {
@@ -85,20 +149,21 @@ export default function DatabaseBackupTools() {
     const records = readRecords(mount.kind).filter(record => record?.source !== 'Official')
     const payload: BackupPayload = {
       format: 'fabula-ultima-tools-backup',
-      version: 1,
+      version: 2,
       kind: mount.kind,
       exportedAt: new Date().toISOString(),
       records,
+      preferences: readPreferences(mount.kind),
     }
     const stamp = new Date().toISOString().slice(0, 10)
     downloadJson(`fabula-ultima-${label}-backup-${stamp}.json`, payload)
-    setMessage(`Exported ${records.length} custom ${label}.`)
+    setMessage(`Exported ${records.length} custom ${label} with database preferences.`)
   }
 
   const importBackup = async (file: File) => {
     try {
       const payload = JSON.parse(await file.text()) as BackupPayload
-      if (payload?.format !== 'fabula-ultima-tools-backup' || payload.version !== 1 || payload.kind !== mount.kind || !Array.isArray(payload.records)) {
+      if (payload?.format !== 'fabula-ultima-tools-backup' || ![1, 2].includes(payload.version) || payload.kind !== mount.kind || !Array.isArray(payload.records)) {
         throw new Error('This backup does not match the current database.')
       }
       const invalid = payload.records.some(record => !record || typeof record !== 'object' || typeof record.id !== 'string' || typeof record.name !== 'string')
@@ -111,7 +176,8 @@ export default function DatabaseBackupTools() {
       const incomingIds = new Set(incoming.map(record => record.id))
       const merged = [...official, ...incoming, ...user.filter(record => !incomingIds.has(record.id))]
       localStorage.setItem(storageKey(mount.kind), JSON.stringify(merged))
-      setMessage(`Imported ${incoming.length} custom ${label}. Reloading…`)
+      if (payload.version === 2 && payload.preferences) restorePreferences(mount.kind, payload.preferences)
+      setMessage(`Imported ${incoming.length} custom ${label}${payload.version === 2 ? ' and preferences' : ''}. Reloading…`)
       window.setTimeout(() => window.location.reload(), 350)
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not import that backup.')
