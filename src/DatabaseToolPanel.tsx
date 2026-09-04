@@ -40,13 +40,13 @@ export default function DatabaseToolPanel() {
           panel.className = 'dbToolPanel'
           panel.dataset.dbToolKind = kind
           panel.open = readOpen(kind)
-          panel.innerHTML = '<summary><span>Database tools</span><small>views, filters, selection, recent & data controls</small></summary><div class="dbToolPanelBody"></div>'
+          panel.innerHTML = '<summary><span>Database tools</span><small>filters, selection, recent, export & data controls</small></summary><div class="dbToolPanelBody"></div>'
           const summary = section.querySelector('.databaseSummary')
           summary?.insertAdjacentElement('afterend', panel)
         }
         const body = panel.querySelector<HTMLElement>('.dbToolPanelBody')
         if (!body) return
-        const selectors = ['.dbAdvancedSearchBar','.dbTaxonomyBar','.dbBrowseBar','.dbPresetTools','.dbSelectionBar','.dbRecentBar','.dbQualityBar','.dbBackupTools']
+        const selectors = ['.dbAdvancedSearchBar','.dbMonsterProfileFilters','.dbTaxonomyBar','.dbHubResultTools','.dbBrowseBar','.dbPresetTools','.dbSelectionBar','.dbRecentBar','.dbQualityBar','.dbBackupTools']
         for (const selector of selectors) {
           const element = section.querySelector<HTMLElement>(selector)
           if (element && element.parentElement !== body) body.appendChild(element)
