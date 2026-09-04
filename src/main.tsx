@@ -6,6 +6,7 @@ import DatabaseOverlay from './DatabaseOverlay'
 import SiteBackupTools from './SiteBackupTools'
 import SessionUtilityTools from './SessionUtilityTools'
 import SavedViewsTools from './SavedViewsTools'
+import UndoDeleteTools from './UndoDeleteTools'
 import PwaTools from './PwaTools'
 import { ensureOfficialData } from './officialBootstrap'
 import './styles.css'
@@ -22,6 +23,7 @@ function renderApp() {
       <SiteBackupTools />
       <SessionUtilityTools />
       <SavedViewsTools />
+      <UndoDeleteTools />
       <PwaTools />
     </React.StrictMode>,
   )
