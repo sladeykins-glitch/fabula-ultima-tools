@@ -40,6 +40,19 @@ const corrections: Record<string, Correction> = {
     patch: { magicDefense: 12 },
     note: 'Source audit: Atlas: High Fantasy, printed page 189. M. DEF is INS d10 +2 = 12.',
   },
+  'official-high-mimesis': {
+    patch: { magicDefense: 12 },
+    note: 'Source audit: Atlas: High Fantasy, printed page 192. M. DEF is INS d10 +2 = 12.',
+  },
+  'official-high-anagnorisis': {
+    patch: { magicDefense: 12 },
+    note: 'Source audit: Atlas: High Fantasy, printed page 194. M. DEF is INS d10 +2 = 12.',
+  },
+  'official-high-dramatists-quill': { note: 'Source audit: Atlas: High Fantasy, printed page 195.' },
+  'official-high-catharsis': {
+    patch: { magicDefense: 14 },
+    note: 'Source audit: Atlas: High Fantasy, printed page 196. M. DEF is INS d12 +2 = 14.',
+  },
 }
 
 function mergePatch(monster: StoredMonster, patch: Record<string, unknown>) {
