@@ -7,6 +7,7 @@ import DatabaseBrowseTools from './DatabaseBrowseTools'
 import DatabasePaginationTools from './DatabasePaginationTools'
 import DatabaseQualityTools from './DatabaseQualityTools'
 import DatabaseQuickActions from './DatabaseQuickActions'
+import DatabaseEditorEnhancements from './DatabaseEditorEnhancements'
 import './styles.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -18,5 +19,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <DatabasePaginationTools />
     <DatabaseQualityTools />
     <DatabaseQuickActions />
+    <DatabaseEditorEnhancements />
   </React.StrictMode>,
 )
