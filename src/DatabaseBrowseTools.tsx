@@ -51,6 +51,21 @@ function databaseKind(section: HTMLElement): Kind | null {
   return null
 }
 
+function updateBrowseBar(bar: HTMLElement, kind: Kind, view: ViewMode, favoriteCount: number, favoritesOnly: boolean) {
+  const signature = `${kind}|${view}|${favoriteCount}|${favoritesOnly}`
+  if (bar.dataset.dbBrowseSignature === signature) return
+  bar.dataset.dbBrowseSignature = signature
+  bar.innerHTML = `
+    <div class="dbBrowseLeft">
+      <button type="button" data-db-view="full" class="${view === 'full' ? 'active' : ''}">Full cards</button>
+      <button type="button" data-db-view="compact" class="${view === 'compact' ? 'active' : ''}">Compact</button>
+    </div>
+    <div class="dbBrowseRight">
+      <span>${favoriteCount} favorite${favoriteCount === 1 ? '' : 's'}</span>
+      <button type="button" data-db-favorites-only class="${favoritesOnly ? 'active' : ''}">${favoritesOnly ? 'Showing favorites' : 'Favorites only'}</button>
+    </div>`
+}
+
 export default function DatabaseBrowseTools() {
   useEffect(() => {
     const apply = () => {
@@ -63,7 +78,8 @@ export default function DatabaseBrowseTools() {
         const kind = databaseKind(section)
         if (!kind) return
 
-        section.classList.toggle('dbCompactMode', views[kind] === 'compact')
+        section.dataset.dbViewMode = views[kind]
+        section.dataset.dbBrowseKind = kind
         section.classList.toggle('dbFavoritesOnly', favoritesOnly[kind])
 
         let bar = section.querySelector<HTMLElement>('.dbBrowseBar')
@@ -75,16 +91,7 @@ export default function DatabaseBrowseTools() {
           summary?.insertAdjacentElement('afterend', bar)
         }
 
-        const favoriteCount = favorites[kind].length
-        bar.innerHTML = `
-          <div class="dbBrowseLeft">
-            <button type="button" data-db-view="full" class="${views[kind] === 'full' ? 'active' : ''}">Full cards</button>
-            <button type="button" data-db-view="compact" class="${views[kind] === 'compact' ? 'active' : ''}">Compact</button>
-          </div>
-          <div class="dbBrowseRight">
-            <span>${favoriteCount} favorite${favoriteCount === 1 ? '' : 's'}</span>
-            <button type="button" data-db-favorites-only class="${favoritesOnly[kind] ? 'active' : ''}">${favoritesOnly[kind] ? 'Showing favorites' : 'Favorites only'}</button>
-          </div>`
+        updateBrowseBar(bar, kind, views[kind], favorites[kind].length, favoritesOnly[kind])
 
         section.querySelectorAll<HTMLElement>('.monsterCard, .itemCard').forEach(card => {
           const name = cardName(card)
@@ -133,30 +140,47 @@ export default function DatabaseBrowseTools() {
 
       const viewButton = target.closest<HTMLButtonElement>('[data-db-view]')
       if (viewButton) {
+        event.preventDefault()
+        event.stopPropagation()
         const bar = viewButton.closest<HTMLElement>('[data-db-browse-kind]')
+        const section = viewButton.closest<HTMLElement>('section')
         const kind = bar?.dataset.dbBrowseKind as Kind | undefined
-        if (!kind) return
+        if (!kind || !section) return
+        const view: ViewMode = viewButton.dataset.dbView === 'compact' ? 'compact' : 'full'
         const views = readViews()
-        views[kind] = viewButton.dataset.dbView === 'compact' ? 'compact' : 'full'
+        views[kind] = view
         writeViews(views)
+        section.dataset.dbViewMode = view
+        bar!.dataset.dbBrowseSignature = ''
         apply()
         return
       }
 
       const favoritesOnlyButton = target.closest<HTMLButtonElement>('[data-db-favorites-only]')
       if (favoritesOnlyButton) {
+        event.preventDefault()
+        event.stopPropagation()
         const bar = favoritesOnlyButton.closest<HTMLElement>('[data-db-browse-kind]')
         const kind = bar?.dataset.dbBrowseKind as Kind | undefined
         if (!kind) return
         const only = readOnly()
         only[kind] = !only[kind]
         writeOnly(only)
+        if (bar) bar.dataset.dbBrowseSignature = ''
         apply()
       }
     }
 
     apply()
-    const observer = new MutationObserver(() => requestAnimationFrame(apply))
+    let scheduled = false
+    const observer = new MutationObserver(() => {
+      if (scheduled) return
+      scheduled = true
+      requestAnimationFrame(() => {
+        scheduled = false
+        apply()
+      })
+    })
     observer.observe(document.body, { childList: true, subtree: true })
     document.addEventListener('click', onClick)
 
