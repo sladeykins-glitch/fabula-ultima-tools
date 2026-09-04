@@ -1,0 +1,4 @@
+.dbAuditBar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:9px 10px; border:1px solid #315c4b; border-radius:11px; background:rgba(6,78,59,.16); color:#a7f3d0; font-size:.84rem; }
+.dbAuditBar > span { margin-right:auto; }
+.dbAuditBar.hasWarnings { border-color:#92400e; background:rgba(120,53,15,.18); color:#fed7aa; }
+.dbAuditBar button { border:1px solid #334155; background:#111827; color:#e5e7eb; border-radius:9px; padding:6px 9px; }
