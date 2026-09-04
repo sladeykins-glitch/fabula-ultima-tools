@@ -8,12 +8,31 @@ type Tab = 'Monster Database' | 'Monster Generator' | 'Item Database' | 'Item Ge
 type AppItem = GeneratedItem & { material?: GeneratedMaterial; origin?: string }
 type ItemSort = 'Newest' | 'Name' | 'Cost Low' | 'Cost High'
 type MonsterSort = 'Newest' | 'Name' | 'Level Low' | 'Level High'
+type LibrarySource = 'All' | 'Core Rulebook' | 'High Fantasy' | 'Natural Fantasy' | 'Techno Fantasy' | 'Generated / Custom'
 
 const species: Species[] = ['Beast','Construct','Demon','Elemental','Humanoid','Monster','Plant','Undead']
 const ranks: Rank[] = ['Soldier','Elite','Champion']
 const combatStyles: CombatStyle[] = ['Mixed','Brute','Defender','Controller','Spellcaster','Assassin','Support']
+const librarySources: LibrarySource[] = ['All','Core Rulebook','High Fantasy','Natural Fantasy','Techno Fantasy','Generated / Custom']
 const materialNatures: (MaterialNature|'Random')[] = ['Random','Animal','Fungal','Incorporeal','Liquid','Artificial','Mineral','Plant']
 const materialFunctions: (MaterialFunction|'Random')[] = ['Random','Agility and Precision','Damage and Power','Protection','Recovery','Sabotage','Support']
+
+function monsterLibrarySource(monster: Monster): Exclude<LibrarySource, 'All'> {
+  if (monster.source !== 'Official') return 'Generated / Custom'
+  if (monster.id.startsWith('official-high-')) return 'High Fantasy'
+  if (monster.id.startsWith('official-natural-')) return 'Natural Fantasy'
+  if (monster.id.startsWith('official-techno-')) return 'Techno Fantasy'
+  return 'Core Rulebook'
+}
+
+function itemLibrarySource(item: AppItem): Exclude<LibrarySource, 'All'> {
+  if (item.source !== 'Official') return 'Generated / Custom'
+  const metadata = `${item.id} ${(item.breakdown || []).join(' ')} ${item.origin || ''}`.toLowerCase()
+  if (item.id.startsWith('official-hf-') || metadata.includes('high fantasy')) return 'High Fantasy'
+  if (item.id.startsWith('official-nf-') || metadata.includes('natural fantasy')) return 'Natural Fantasy'
+  if (item.id.startsWith('official-tf-') || metadata.includes('techno fantasy')) return 'Techno Fantasy'
+  return 'Core Rulebook'
+}
 
 const combatTactics: Record<CombatStyle, string> = {
   Mixed: 'Adapt to the battlefield. Open with the safest attack or spell, then pivot toward whichever option pressures the party most effectively.',
@@ -67,10 +86,11 @@ function MonsterCard({ monster, onDelete }: { monster: Monster; onDelete?:()=>vo
   const attacks = monster.attacks || []
   const affinities = monster.affinities || Object.fromEntries(damageTypes.map(t => [t, 'Normal'])) as Monster['affinities']
   const style = monster.combatStyle || 'Mixed'
+  const librarySource = monsterLibrarySource(monster)
 
   return <article className="card monsterCard">
     <div className="cardTitle">
-      <div><span className="source">{monster.source}</span><h2>{monster.name}</h2></div>
+      <div><span className="source">{monster.source}{monster.source === 'Official' ? ` · ${librarySource}` : ''}</span><h2>{monster.name}</h2></div>
       {onDelete && <button className="danger" onClick={onDelete}>Delete</button>}
     </div>
     <p className="muted">Lv {monster.level} · {monster.rank} · {monster.species}{monster.combatStyle ? ` · ${monster.combatStyle}` : ''}</p>
@@ -91,6 +111,7 @@ function MonsterDatabase({ monsters, setMonsters, search, setSearch }: { monster
   const [rank, setRank] = useState<'All'|Rank>('All')
   const [speciesFilter, setSpeciesFilter] = useState<'All'|Species>('All')
   const [styleFilter, setStyleFilter] = useState<'All'|CombatStyle>('All')
+  const [sourceFilter, setSourceFilter] = useState<LibrarySource>('All')
   const [sort, setSort] = useState<MonsterSort>('Newest')
 
   const filtered = useMemo(() => {
@@ -98,29 +119,33 @@ function MonsterDatabase({ monsters, setMonsters, search, setSearch }: { monster
       const skills = (m.skills || []).map(s => `${s.name} ${s.summary}`).join(' ')
       const spells = (m.spells || []).map(s => `${s.name} ${s.effect}`).join(' ')
       const attacks = (m.attacks || []).map(a => `${a.name} ${a.damageType} ${a.effect || ''}`).join(' ')
-      const haystack = `${m.name} ${m.species} ${m.rank} ${m.combatStyle || ''} ${m.traits.join(' ')} ${skills} ${spells} ${attacks}`.toLowerCase()
+      const book = monsterLibrarySource(m)
+      const haystack = `${m.name} ${m.species} ${m.rank} ${m.combatStyle || ''} ${m.traits.join(' ')} ${skills} ${spells} ${attacks} ${book}`.toLowerCase()
       return haystack.includes(search.toLowerCase())
         && (rank === 'All' || m.rank === rank)
         && (speciesFilter === 'All' || m.species === speciesFilter)
         && (styleFilter === 'All' || (m.combatStyle || 'Mixed') === styleFilter)
+        && (sourceFilter === 'All' || book === sourceFilter)
     })
     if (sort === 'Name') return [...matches].sort((a,b)=>a.name.localeCompare(b.name))
     if (sort === 'Level Low') return [...matches].sort((a,b)=>a.level-b.level)
     if (sort === 'Level High') return [...matches].sort((a,b)=>b.level-a.level)
     return matches
-  }, [monsters, search, rank, speciesFilter, styleFilter, sort])
+  }, [monsters, search, rank, speciesFilter, styleFilter, sourceFilter, sort])
 
   const summary = useMemo(() => ({
     soldiers: filtered.filter(m=>m.rank==='Soldier').length,
     elites: filtered.filter(m=>m.rank==='Elite').length,
     champions: filtered.filter(m=>m.rank==='Champion').length,
     spellcasters: filtered.filter(m=>(m.spells || []).length > 0).length,
+    official: filtered.filter(m=>m.source==='Official').length,
     averageLevel: filtered.length ? Math.round(filtered.reduce((total,m)=>total+m.level,0) / filtered.length) : 0,
   }), [filtered])
 
   return <section>
     <div className="toolbar itemToolbar">
       <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search monsters, skills, spells, attacks..." />
+      <select className="compactSelect" value={sourceFilter} onChange={e=>setSourceFilter(e.target.value as LibrarySource)}>{librarySources.map(source=><option key={source}>{source}</option>)}</select>
       <select className="compactSelect" value={rank} onChange={e=>setRank(e.target.value as 'All'|Rank)}><option>All</option>{ranks.map(r=><option key={r}>{r}</option>)}</select>
       <select className="compactSelect" value={speciesFilter} onChange={e=>setSpeciesFilter(e.target.value as 'All'|Species)}><option>All</option>{species.map(s=><option key={s}>{s}</option>)}</select>
       <select className="compactSelect" value={styleFilter} onChange={e=>setStyleFilter(e.target.value as 'All'|CombatStyle)}><option>All</option>{combatStyles.map(s=><option key={s}>{s}</option>)}</select>
@@ -128,7 +153,7 @@ function MonsterDatabase({ monsters, setMonsters, search, setSearch }: { monster
       <span>{filtered.length} entries</span>
     </div>
     <div className="databaseSummary">
-      <span>Soldiers <b>{summary.soldiers}</b></span><span>Elites <b>{summary.elites}</b></span><span>Champions <b>{summary.champions}</b></span><span>Spellcasters <b>{summary.spellcasters}</b></span><span>Avg Lv <b>{summary.averageLevel}</b></span>
+      <span>Official <b>{summary.official}</b></span><span>Soldiers <b>{summary.soldiers}</b></span><span>Elites <b>{summary.elites}</b></span><span>Champions <b>{summary.champions}</b></span><span>Spellcasters <b>{summary.spellcasters}</b></span><span>Avg Lv <b>{summary.averageLevel}</b></span>
     </div>
     {filtered.length === 0 ? <Empty text="No matching monsters saved yet. Generate one to start your database." /> : <div className="grid">
       {filtered.map(m => <MonsterCard key={m.id} monster={m} onDelete={()=>setMonsters(prev=>prev.filter(x=>x.id!==m.id))} />)}
@@ -174,6 +199,7 @@ function ItemDatabase({ items, setItems }: { items: AppItem[]; setItems: React.D
   const [search, setSearch] = useState('')
   const [type, setType] = useState<'All'|ItemType>('All')
   const [category, setCategory] = useState('All')
+  const [sourceFilter, setSourceFilter] = useState<LibrarySource>('All')
   const [martialFilter, setMartialFilter] = useState<'All'|'Martial'|'Non-martial'>('All')
   const [materialFilter, setMaterialFilter] = useState<'All'|'With Material'|'No Material'>('All')
   const [sort, setSort] = useState<ItemSort>('Newest')
@@ -183,12 +209,14 @@ function ItemDatabase({ items, setItems }: { items: AppItem[]; setItems: React.D
   const filtered = useMemo(() => {
     const matches = items.filter(item => {
       const materialText = item.material ? `${item.material.name} ${item.material.nature} ${item.material.element || ''} ${item.material.function || ''}` : ''
-      const haystack = `${item.name} ${item.type} ${item.category || ''} ${item.baseItem || ''} ${item.quality || ''} ${item.effect} ${materialText} ${item.origin || ''}`.toLowerCase()
+      const book = itemLibrarySource(item)
+      const haystack = `${item.name} ${item.type} ${item.category || ''} ${item.baseItem || ''} ${item.quality || ''} ${item.effect} ${materialText} ${item.origin || ''} ${book}`.toLowerCase()
       const matchesMartial = martialFilter === 'All' || (martialFilter === 'Martial' ? !!item.martial : !item.martial)
       const matchesMaterial = materialFilter === 'All' || (materialFilter === 'With Material' ? !!item.material : !item.material)
       return haystack.includes(search.toLowerCase())
         && (type === 'All' || item.type === type)
         && (category === 'All' || item.category === category)
+        && (sourceFilter === 'All' || book === sourceFilter)
         && matchesMartial
         && matchesMaterial
     })
@@ -196,13 +224,14 @@ function ItemDatabase({ items, setItems }: { items: AppItem[]; setItems: React.D
     if (sort === 'Cost Low') return [...matches].sort((a,b)=>a.cost-b.cost)
     if (sort === 'Cost High') return [...matches].sort((a,b)=>b.cost-a.cost)
     return matches
-  }, [items, search, type, category, martialFilter, materialFilter, sort])
+  }, [items, search, type, category, sourceFilter, martialFilter, materialFilter, sort])
 
   const summary = useMemo(() => ({
     weapons: filtered.filter(i=>i.type==='Weapon').length,
     armor: filtered.filter(i=>i.type==='Armor').length,
     shields: filtered.filter(i=>i.type==='Shield').length,
     accessories: filtered.filter(i=>i.type==='Accessory').length,
+    official: filtered.filter(i=>i.source==='Official').length,
     martial: filtered.filter(i=>!!i.martial).length,
     materials: filtered.filter(i=>!!i.material).length,
     averageCost: filtered.length ? Math.round(filtered.reduce((total,i)=>total+i.cost,0) / filtered.length) : 0,
@@ -211,6 +240,7 @@ function ItemDatabase({ items, setItems }: { items: AppItem[]; setItems: React.D
   return <section>
     <div className="toolbar itemToolbar">
       <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search items, qualities, materials, effects..." />
+      <select className="compactSelect" value={sourceFilter} onChange={e=>setSourceFilter(e.target.value as LibrarySource)}>{librarySources.map(source=><option key={source}>{source}</option>)}</select>
       <select className="compactSelect" value={type} onChange={e=>setType(e.target.value as 'All'|ItemType)}>
         <option>All</option><option>Weapon</option><option>Armor</option><option>Shield</option><option>Accessory</option>
       </select>
@@ -229,16 +259,17 @@ function ItemDatabase({ items, setItems }: { items: AppItem[]; setItems: React.D
       <span>{filtered.length} entries</span>
     </div>
     <div className="databaseSummary">
-      <span>Weapons <b>{summary.weapons}</b></span><span>Armor <b>{summary.armor}</b></span><span>Shields <b>{summary.shields}</b></span><span>Accessories <b>{summary.accessories}</b></span><span>Martial <b>{summary.martial}</b></span><span>Materials <b>{summary.materials}</b></span><span>Avg Cost <b>{summary.averageCost}z</b></span>
+      <span>Official <b>{summary.official}</b></span><span>Weapons <b>{summary.weapons}</b></span><span>Armor <b>{summary.armor}</b></span><span>Shields <b>{summary.shields}</b></span><span>Accessories <b>{summary.accessories}</b></span><span>Martial <b>{summary.martial}</b></span><span>Materials <b>{summary.materials}</b></span><span>Avg Cost <b>{summary.averageCost}z</b></span>
     </div>
     {filtered.length===0 ? <Empty text="No matching items saved yet. Generate one to start your database."/> : <div className="grid">{filtered.map(item=><ItemCard key={item.id} item={item} onDelete={()=>setItems(prev=>prev.filter(x=>x.id!==item.id))} />)}</div>}
   </section>
 }
 
 function ItemCard({ item, onDelete }: { item: AppItem; onDelete?:()=>void }) {
+  const librarySource = itemLibrarySource(item)
   return <article className="card itemCard" key={item.id}>
     <div className="cardTitle">
-      <div><span className="source">{item.source}</span><h2>{item.name}</h2></div>
+      <div><span className="source">{item.source}{item.source === 'Official' ? ` · ${librarySource}` : ''}</span><h2>{item.name}</h2></div>
       {onDelete && <button className="danger" onClick={onDelete}>Delete</button>}
     </div>
     <div className="itemMeta"><span>{item.type}</span>{item.category && <span>{item.category}</span>}<span>{item.cost}z</span>{item.martial && <span>Martial</span>}{item.material && <span>Material</span>}</div>
