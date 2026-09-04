@@ -1,0 +1,5 @@
+.dbSelectionInsights { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:0 0 12px; padding:10px 12px; border:1px solid #334155; border-radius:12px; background:rgba(49,46,129,.12); }
+.dbSelectionInsights span { flex:1 1 420px; color:#cbd5e1; font-size:.86rem; line-height:1.5; }
+.dbSelectionInsights button { border:1px solid #4f5d78; background:#111827; color:#e5e7eb; border-radius:10px; padding:7px 10px; }
+.dbSelectionInsights button:hover { border-color:#818cf8; }
+@media (max-width:650px) { .dbSelectionInsights { align-items:stretch; } .dbSelectionInsights button { width:100%; } }
