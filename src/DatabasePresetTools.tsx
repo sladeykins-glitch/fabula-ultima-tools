@@ -30,8 +30,8 @@ function writePresets(value: Record<Kind, Preset[]>) {
 }
 
 function kindForSection(section: HTMLElement): Kind | null {
-  if (section.querySelector('.monsterCard')) return 'monster'
-  if (section.querySelector('.itemCard')) return 'item'
+  if (section.querySelector('[data-db-record-kind="monster"]') || section.querySelector('input[placeholder^="Search monsters"]')) return 'monster'
+  if (section.querySelector('[data-db-record-kind="item"]') || section.querySelector('input[placeholder^="Search items"]')) return 'item'
   return null
 }
 
@@ -91,7 +91,7 @@ function renderBar(bar: HTMLElement, kind: Kind, presets: Preset[]) {
     <span class="dbPresetLabel">Saved views</span>
     <select data-db-preset-select aria-label="Saved database views">
       <option value="">Choose a view…</option>
-      ${presets.map(preset => `<option value="${preset.id.replace(/"/g, '&quot;')}">${preset.name.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</option>`).join('')}
+      ${presets.map(preset => `<option value="${preset.id.replace(/"/g, '&quot;')}">${preset.name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</option>`).join('')}
     </select>
     <button type="button" data-db-preset-apply>Apply</button>
     <button type="button" data-db-preset-save>Save current</button>
