@@ -1,0 +1,82 @@
+.savedViewsTools {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.savedViewsTools > button {
+  white-space: nowrap;
+}
+
+.savedViewsMenu {
+  position: absolute;
+  z-index: 45;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(350px, calc(100vw - 28px));
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  background: #0b1220;
+  box-shadow: 0 20px 55px rgba(0,0,0,.42);
+}
+
+.savedViewsTitle {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 4px 5px 8px;
+  border-bottom: 1px solid #263244;
+}
+
+.savedViewsTitle small,
+.savedViewsMenu p {
+  color: #94a3b8;
+  font-size: .8rem;
+}
+
+.savedViewsCreate {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 7px;
+}
+
+.savedViewsCreate input {
+  min-width: 0;
+  border: 1px solid #334155;
+  border-radius: 9px;
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 8px 10px;
+}
+
+.savedViewRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px;
+}
+
+.savedViewOpen {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.savedViewDelete {
+  width: 38px;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  color: #fca5a5;
+}
+
+@media (max-width: 700px) {
+  .savedViewsMenu {
+    position: fixed;
+    top: 78px;
+    right: 12px;
+  }
+}
