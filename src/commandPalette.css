@@ -1,0 +1,12 @@
+.commandPaletteBackdrop { position:fixed; inset:0; z-index:90; display:grid; align-items:start; justify-items:center; padding:12vh 16px 24px; background:rgba(2,6,23,.72); backdrop-filter:blur(5px); }
+.commandPalette { width:min(680px,100%); overflow:hidden; border:1px solid #475569; border-radius:16px; background:#0f172a; box-shadow:0 28px 90px rgba(0,0,0,.55); }
+.commandPaletteSearch { display:flex; gap:10px; align-items:center; padding:12px; border-bottom:1px solid #263244; }
+.commandPaletteSearch input { border:0; background:transparent; padding:8px; outline:none; }
+.commandPaletteSearch kbd, .commandPaletteFooter span { border:1px solid #334155; border-radius:7px; padding:3px 6px; background:#111827; color:#94a3b8; font-size:.75rem; white-space:nowrap; }
+.commandPaletteList { max-height:min(52vh,480px); overflow:auto; padding:6px; }
+.commandPaletteList button { width:100%; display:flex; justify-content:space-between; align-items:center; gap:14px; padding:11px 12px; border:1px solid transparent; border-radius:10px; background:transparent; color:#e5e7eb; text-align:left; }
+.commandPaletteList button:hover, .commandPaletteList button.active { border-color:#4f5d78; background:#172036; }
+.commandPaletteList small { color:#94a3b8; }
+.commandPaletteEmpty { padding:28px 16px; text-align:center; color:#94a3b8; }
+.commandPaletteFooter { display:flex; flex-wrap:wrap; gap:8px; padding:10px 12px; border-top:1px solid #263244; color:#94a3b8; }
+@media (max-width:650px) { .commandPaletteBackdrop { padding-top:7vh; } .commandPaletteFooter { display:none; } }
