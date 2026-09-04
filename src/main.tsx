@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
+import AppErrorBoundary from './AppErrorBoundary'
 import DatabaseOverlay from './DatabaseOverlay'
 import SiteBackupTools from './SiteBackupTools'
 import PwaTools from './PwaTools'
@@ -20,7 +21,9 @@ import './performance.css'
  */
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <AppErrorBoundary>
+      <App />
+    </AppErrorBoundary>
     <DatabaseOverlay />
     <SiteBackupTools />
     <PwaTools />
