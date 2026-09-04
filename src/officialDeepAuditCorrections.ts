@@ -26,6 +26,19 @@ const itemPatches: Record<string, Record<string, unknown>> = {
   },
 }
 
+const coreRareWeaponPages: Record<string, number> = {
+  Arcane:270,
+  Bow:271,
+  Brawling:272,
+  Dagger:273,
+  Firearm:274,
+  Flail:275,
+  Heavy:276,
+  Spear:277,
+  Sword:278,
+  Thrown:279,
+}
+
 export function applyOfficialDeepAuditCorrections() {
   try {
     const monsters = JSON.parse(localStorage.getItem('fu-monsters') || '[]')
@@ -51,11 +64,22 @@ export function applyOfficialDeepAuditCorrections() {
       let changed = false
       const next = items.map((item: StoredRecord) => {
         if (item?.source !== 'Official') return item
-        const patch = itemPatches[String(item?.id || '')]
-        if (!patch) return item
-        const patched = { ...item, ...patch }
-        if (JSON.stringify(patched) !== JSON.stringify(item)) changed = true
-        return patched
+        const id = String(item?.id || '')
+        const patch = itemPatches[id]
+        let updated = patch ? { ...item, ...patch } : item
+
+        // Core rare weapons were checked category-by-category against printed pp.270-279.
+        if (id.startsWith('official-core-rare-')) {
+          const page = coreRareWeaponPages[String(updated.category || '')]
+          if (page) {
+            const sourceNote = `Source audit: Core Rulebook v1.02, printed page ${page}.`
+            const breakdown = Array.isArray(updated.breakdown) ? updated.breakdown : []
+            if (!breakdown.includes(sourceNote)) updated = { ...updated, breakdown:[...breakdown, sourceNote] }
+          }
+        }
+
+        if (JSON.stringify(updated) !== JSON.stringify(item)) changed = true
+        return updated
       })
       if (changed) localStorage.setItem('fu-items', JSON.stringify(next))
     }
