@@ -20,6 +20,7 @@ const SETTINGS_KEYS = [
   'fu-db-pagination',
   'fu-db-saved-views',
   'fu-db-selection',
+  'fu-db-recent',
   'fu-active-tab',
   'fu-monster-filters',
   'fu-item-filters',
