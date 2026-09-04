@@ -1,0 +1,14 @@
+.dbQualityBar { display:flex; align-items:center; gap:6px; margin:0 0 12px; padding:8px 10px; border:1px solid #263449; border-radius:10px; background:rgba(15,23,42,.45); color:#a7b3c7; font-size:.85rem; }
+.dbQualityBar strong { color:#d7e0ee; }
+.dbQualityBar.hasIssues { border-color:#854d0e; background:rgba(120,53,15,.16); color:#facc15; }
+.dbSourceOfficial { border-left:3px solid #64748b; }
+.dbSourceCustom { border-left:3px solid #8b5cf6; }
+.dbSourceGenerated { border-left:3px solid #0ea5e9; }
+.dbRecordNeedsReview { outline:1px solid rgba(245,158,11,.55); }
+.dbRecordWarning { display:inline-flex; align-items:center; justify-content:center; margin-left:auto; padding:4px 7px; border:1px solid #a16207; border-radius:999px; background:rgba(120,53,15,.35); color:#fde68a; font-size:.72rem; font-weight:700; white-space:nowrap; }
+.dbSubtypeBadge { border-color:#475569 !important; background:#172033 !important; color:#cbd5e1 !important; }
+.dbValidationBanner { margin:0 0 14px; padding:10px 12px; border:1px solid #b91c1c; border-radius:10px; background:rgba(127,29,29,.2); color:#fecaca; }
+.dbValidationBanner strong { color:#fee2e2; }
+.dbValidationBanner ul { margin:6px 0 0 18px; padding:0; }
+.dbInvalidField { border-color:#ef4444 !important; box-shadow:0 0 0 2px rgba(239,68,68,.18) !important; }
+@media (max-width:650px) { .dbQualityBar { align-items:flex-start; } .dbRecordWarning { font-size:.66rem; } }
