@@ -2,57 +2,27 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import DatabaseOverlay from './DatabaseOverlay'
-import DatabaseBackupTools from './DatabaseBackupTools'
-import DatabaseBrowseTools from './DatabaseBrowseTools'
-import DatabasePaginationTools from './DatabasePaginationTools'
-import DatabaseQualityTools from './DatabaseQualityTools'
-import DatabaseQuickActions from './DatabaseQuickActions'
-import DatabaseEditorEnhancements from './DatabaseEditorEnhancements'
 import SiteBackupTools from './SiteBackupTools'
-import DatabaseUndoTools from './DatabaseUndoTools'
-import AccessibilityTools from './AccessibilityTools'
-import DatabaseSelectionTools from './DatabaseSelectionTools'
-import DatabaseCompareTools from './DatabaseCompareTools'
-import DatabaseRecentTools from './DatabaseRecentTools'
-import DataMaintenanceTools from './DataMaintenanceTools'
-import CommandPalette from './CommandPalette'
-import DatabaseCardCopyTools from './DatabaseCardCopyTools'
-import DatabaseCreateTools from './DatabaseCreateTools'
-import DatabaseToolPanel from './DatabaseToolPanel'
 import PwaTools from './PwaTools'
-import DatabaseEnhancementHub from './DatabaseEnhancementHub'
-import AdvancedSearchSyntaxTools from './AdvancedSearchSyntaxTools'
 import './styles.css'
+import './performance.css'
 
 /*
- * Secondary filtering/taxonomy/export behavior is consolidated into one hub
- * instead of mounting several document-wide MutationObservers independently.
- * Advanced search syntax uses event delegation only, so the richer database
- * workflow does not restore the observer-heavy behavior removed previously.
+ * Stability-first runtime.
+ *
+ * The previous enhancement stack mounted many document-wide MutationObservers
+ * that all reacted to the same database card changes. With the expanded
+ * bestiary those observers could trigger each other repeatedly and lock the
+ * browser after ordinary clicks. Keep only the core React application, the
+ * stable-id editor, whole-site backup, and the one-time PWA cache recovery.
+ * Secondary database features should return as native React controls rather
+ * than global DOM decorators.
  */
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
     <DatabaseOverlay />
-    <DatabaseBackupTools />
-    <DatabaseBrowseTools />
-    <DatabasePaginationTools />
-    <DatabaseQualityTools />
-    <DatabaseQuickActions />
-    <DatabaseEditorEnhancements />
     <SiteBackupTools />
-    <DatabaseUndoTools />
-    <AccessibilityTools />
-    <DatabaseSelectionTools />
-    <DatabaseCompareTools />
-    <DatabaseRecentTools />
-    <DataMaintenanceTools />
-    <CommandPalette />
-    <DatabaseCardCopyTools />
-    <DatabaseCreateTools />
-    <DatabaseEnhancementHub />
-    <AdvancedSearchSyntaxTools />
-    <DatabaseToolPanel />
     <PwaTools />
   </React.StrictMode>,
 )
