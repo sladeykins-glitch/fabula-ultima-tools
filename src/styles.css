@@ -53,6 +53,7 @@ summary { cursor: pointer; color: #a5b4fc; font-weight: 700; }
   .toolbar { align-items: stretch; flex-direction: column; }
   .compactSelect { width: 100%; }
   .preview { min-height: 260px; }
+  .databaseSummary { grid-template-columns: repeat(2, minmax(0,1fr)); }
 }
 .smallText { font-size: .86rem; margin-top: -6px; }
 .monsterCard h3 { margin-top: 18px; }
@@ -67,3 +68,10 @@ summary { cursor: pointer; color: #a5b4fc; font-weight: 700; }
 .tacticsBox { display: grid; gap: 6px; margin: 14px 0 4px; padding: 11px 12px; border: 1px solid #3b4965; border-radius: 11px; background: rgba(49,46,129,.16); }
 .tacticsBox strong { color: #c7d2fe; }
 .tacticsBox span { color: #cbd5e1; line-height: 1.45; font-size: .92rem; }
+.itemToolbar { flex-wrap: wrap; }
+.databaseSummary { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 8px; margin: -2px 0 14px; }
+.databaseSummary span { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 8px 10px; border: 1px solid #2a374a; border-radius: 10px; background: rgba(15,23,42,.62); color: #94a3b8; font-size: .86rem; }
+.databaseSummary b { color: #e5e7eb; }
+.itemMeta { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
+.itemMeta span { padding: 4px 7px; border: 1px solid #334155; border-radius: 999px; background: #111827; color: #cbd5e1; font-size: .78rem; }
+.itemCard .attack { line-height: 1.45; }
