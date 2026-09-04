@@ -1,19 +1,45 @@
-const OFFICIAL_DATA_VERSION = '2026-09-04-natural-techno-v3'
+const OFFICIAL_DATA_VERSION = '2026-09-04-natural-techno-v4'
 const VERSION_KEY = 'fu-official-data-version'
 
-function hasOfficialData(key: string) {
+const REQUIRED_MONSTER_IDS = [
+  'official-core-cutterpillar',
+  'official-high-eileen',
+  'official-natural-tonitranea-rex',
+  'official-techno-commissioner-vyne',
+  'official-techno-syntech-cop',
+]
+
+const REQUIRED_ITEM_PREFIXES = [
+  'official-core-',
+  'official-hf-',
+  'official-nf-',
+  'official-tf-',
+]
+
+function storedRecords(key: string) {
   try {
     const records = JSON.parse(localStorage.getItem(key) || '[]')
-    return Array.isArray(records) && records.some(record => record?.source === 'Official')
+    return Array.isArray(records) ? records : []
   } catch {
-    return false
+    return []
   }
+}
+
+function officialLibraryReady() {
+  const monsters = storedRecords('fu-monsters')
+  const items = storedRecords('fu-items')
+  if (monsters.length < 100 || items.length < 40) return false
+
+  const monsterIds = new Set(monsters.filter(record => record?.source === 'Official').map(record => record.id))
+  if (!REQUIRED_MONSTER_IDS.every(id => monsterIds.has(id))) return false
+
+  const officialItemIds = items.filter(record => record?.source === 'Official').map(record => String(record.id || ''))
+  return REQUIRED_ITEM_PREFIXES.every(prefix => officialItemIds.some(id => id.startsWith(prefix)))
 }
 
 export async function ensureOfficialData() {
   const currentVersion = localStorage.getItem(VERSION_KEY)
-  const ready = hasOfficialData('fu-monsters') && hasOfficialData('fu-items')
-  if (currentVersion === OFFICIAL_DATA_VERSION && ready) return false
+  if (currentVersion === OFFICIAL_DATA_VERSION && officialLibraryReady()) return false
 
   const { seedOfficialData } = await import('./officialSeedData')
   seedOfficialData()
