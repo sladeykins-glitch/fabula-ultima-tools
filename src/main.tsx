@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import AppErrorBoundary from './AppErrorBoundary'
 import DatabaseOverlay from './DatabaseOverlay'
+import DatabaseOpenEventBridge from './DatabaseOpenEventBridge'
 import SiteBackupTools from './SiteBackupTools'
 import PwaTools from './PwaTools'
 import './styles.css'
@@ -26,6 +27,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <App />
     </AppErrorBoundary>
     <DatabaseOverlay />
+    <DatabaseOpenEventBridge />
     <SiteBackupTools />
     <PwaTools />
   </React.StrictMode>,
