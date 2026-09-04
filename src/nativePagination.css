@@ -10,91 +10,40 @@
   background: rgba(8, 16, 31, 0.45);
 }
 
-.nativePagination button {
-  min-width: 96px;
-}
+.nativePagination button { min-width: 96px; }
+.nativePagination button:disabled, .nativeDbActions button:disabled { opacity: 0.45; cursor: not-allowed; }
+.nativePagination span { min-width: 110px; text-align: center; white-space: nowrap; }
 
-.nativePagination button:disabled,
-.nativeDbActions button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
+.nativeDbActions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0; }
+.nativeDbActions button.active, .favoriteButton.active, .selectButton.active { border-color: #8b7cff; background: rgba(99, 84, 230, 0.24); }
+.nativeDbStatus { color: #b9c7e7; font-size: 0.88rem; margin-left: 2px; }
+.favoriteButton { min-width: 38px; padding-left: 9px; padding-right: 9px; font-size: 1.08rem; }
+.selectButton { white-space: nowrap; }
+.favoriteCard { box-shadow: inset 0 0 0 1px rgba(139, 124, 255, 0.4); }
+.selectedCard { outline: 2px solid rgba(129, 140, 248, .75); outline-offset: -2px; }
 
-.nativePagination span {
-  min-width: 110px;
-  text-align: center;
-  white-space: nowrap;
-}
+.searchHelp { margin: 8px 0 14px; border: 1px solid var(--border, #2b3a55); border-radius: 10px; padding: 8px 12px; background: rgba(8, 16, 31, 0.28); }
+.searchHelp summary { cursor: pointer; color: #b9c7e7; }
+.searchHelp p { margin: 9px 0 2px; color: #aab8d5; line-height: 1.5; }
+.searchHelp code { white-space: nowrap; }
 
-.nativeDbActions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin: 12px 0;
-}
-
-.nativeDbActions button.active,
-.favoriteButton.active {
-  border-color: #8b7cff;
-  background: rgba(99, 84, 230, 0.24);
-}
-
-.nativeDbStatus {
-  color: #b9c7e7;
-  font-size: 0.88rem;
-  margin-left: 2px;
-}
-
-.favoriteButton {
-  min-width: 38px;
-  padding-left: 9px;
-  padding-right: 9px;
-  font-size: 1.08rem;
-}
-
-.favoriteCard {
-  box-shadow: inset 0 0 0 1px rgba(139, 124, 255, 0.4);
-}
-
-.searchHelp {
-  margin: 8px 0 14px;
-  border: 1px solid var(--border, #2b3a55);
-  border-radius: 10px;
-  padding: 8px 12px;
-  background: rgba(8, 16, 31, 0.28);
-}
-
-.searchHelp summary {
-  cursor: pointer;
-  color: #b9c7e7;
-}
-
-.searchHelp p {
-  margin: 9px 0 2px;
-  color: #aab8d5;
-  line-height: 1.5;
-}
-
-.searchHelp code {
-  white-space: nowrap;
-}
+.compareBackdrop { position: fixed; inset: 0; z-index: 55; display: grid; place-items: center; padding: 18px; background: rgba(2,6,23,.84); backdrop-filter: blur(5px); }
+.compareModal { width: min(1180px, 100%); max-height: 90vh; overflow: auto; border: 1px solid #475569; border-radius: 16px; background: #0f172a; padding: 16px; box-shadow: 0 28px 90px rgba(0,0,0,.5); }
+.compareHeader { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 14px; }
+.compareHeader h2 { margin: 5px 0 0; }
+.compareTableWrap { overflow: auto; border: 1px solid #263244; border-radius: 12px; }
+.compareTable { width: 100%; border-collapse: collapse; min-width: 680px; }
+.compareTable th, .compareTable td { padding: 9px 11px; border-right: 1px solid #263244; border-bottom: 1px solid #263244; text-align: left; vertical-align: top; }
+.compareTable thead th { position: sticky; top: 0; z-index: 1; background: #111827; color: #e5e7eb; }
+.compareTable tbody th { position: sticky; left: 0; background: #0b1220; color: #a5b4fc; white-space: nowrap; }
+.compareTable td { color: #cbd5e1; }
+.compareTable tr:last-child th, .compareTable tr:last-child td { border-bottom: 0; }
 
 @media (max-width: 640px) {
-  .nativePagination {
-    gap: 8px;
-  }
-
-  .nativePagination button {
-    min-width: 0;
-    flex: 1;
-  }
-
-  .nativeDbActions button {
-    flex: 1 1 calc(50% - 8px);
-  }
-
-  .nativeDbStatus {
-    flex-basis: 100%;
-  }
+  .nativePagination { gap: 8px; }
+  .nativePagination button { min-width: 0; flex: 1; }
+  .nativeDbActions button { flex: 1 1 calc(50% - 8px); }
+  .nativeDbStatus { flex-basis: 100%; }
+  .compareBackdrop { padding: 7px; }
+  .compareModal { max-height: 95vh; padding: 10px; }
 }
