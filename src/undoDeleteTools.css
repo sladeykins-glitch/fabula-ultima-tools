@@ -1,0 +1,36 @@
+.undoDeleteTools {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 380px;
+  padding: 6px 8px;
+  border: 1px solid #475569;
+  border-radius: 10px;
+  background: rgba(15,23,42,.94);
+  color: #cbd5e1;
+  font-size: .82rem;
+}
+
+.undoDeleteTools span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.undoDeleteTools button {
+  padding: 5px 8px;
+  flex: 0 0 auto;
+}
+
+.undoDismiss {
+  width: 31px;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+@media (max-width: 760px) {
+  .undoDeleteTools {
+    flex-basis: 100%;
+    order: 10;
+  }
+}
