@@ -314,3 +314,28 @@ export function aestraGenerationHint(nation:AestraNation) {
   const p=aestraNations[nation]
   return { species:pick(p.preferredSpecies), combatStyle:pick(p.preferredStyles), damageType:pick(p.damage), origins:p.origins }
 }
+
+export function refreshAestraMonsterLabel(monster:Monster,nation:AestraNation):Monster {
+  const p=aestraNations[nation], motif=pick(p.motifs), prefix=pick(p.prefixes)
+  const nationalName=monster.species==='Construct'?`${prefix}-${Math.floor(10+Math.random()*90)} ${monster.name}`:`${prefix} ${monster.name}`
+  return {...monster,name:nationalName,traits:[motif,...(monster.traits||[]).filter(t=>t!==motif)].slice(0,4)}
+}
+
+export function refreshAestraAffinities(monster:Monster,nation:AestraNation,influence:AestraInfluence='Stable',depth:ValdoriaDepth='Market'):Monster {
+  const affinities={...monster.affinities}
+  if(nation==='Garlond'){affinities.ice=improveAffinity(affinities.ice);affinities.fire=worsenAffinity(affinities.fire)}
+  if(nation==='Rübenberg')affinities.air=improveAffinity(affinities.air)
+  if(nation==='Palmeria'){
+    const type=(monster.attacks?.[0]?.damageType||'light') as DamageType
+    affinities[type]=improveAffinity(affinities[type])
+  }
+  if(nation==='Valdoria'&&depth==='Deep Below')affinities.earth=improveAffinity(affinities.earth)
+  if(nation==='Valdoria'&&depth==='Buried / Ancient'){
+    affinities.dark=improveAffinity(affinities.dark);affinities.light=improveAffinity(affinities.light)
+  }
+  if(influence==='Corrupted'){
+    affinities.dark=improveAffinity(affinities.dark);affinities.light=worsenAffinity(affinities.light)
+  }
+  return {...monster,affinities}
+}
+

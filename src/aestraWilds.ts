@@ -59,3 +59,22 @@ export function applyAestraWildIdentity(monster:Monster,environment:AestraEnviro
 
  return {...monster,attacks,skills,affinities,traits,magicBonus,accuracyBonus,mp,notes:[`Aestra: uncontrolled lands.`,`Environment: ${environment}. ${environmentNote}`,`Exposure: ${exposure}. ${exposureNote}`,`Origin: ${origin}. ${originNote}`,...monster.notes.filter(n=>!n.startsWith('Aestra: ')&&!n.startsWith('Environment: ')&&!n.startsWith('Exposure: ')&&!n.startsWith('Origin: '))]}
 }
+
+
+export function aestraWildGenerationHint(environment:AestraEnvironment){
+ const styles:Record<AestraEnvironment,import('./rules').CombatStyle[]>={
+  'Green Reaches':['Controller','Brute','Mixed'],
+  'Scarlands':['Controller','Spellcaster','Brute'],
+  'Ruin Belts':['Defender','Controller','Spellcaster'],
+  'Frontier':['Mixed','Support','Assassin'],
+  'Deep Wilds':['Controller','Assassin','Mixed'],
+ }
+ return {combatStyle:pick(styles[environment])}
+}
+
+export function refreshAestraWildAffinities(monster:Monster,environment:AestraEnvironment):Monster{
+ const affinities={...monster.affinities}
+ if(environment==='Green Reaches')affinities.earth=improve(affinities.earth)
+ if(environment==='Ruin Belts')affinities.bolt=improve(affinities.bolt)
+ return {...monster,affinities}
+}
