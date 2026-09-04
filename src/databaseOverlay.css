@@ -1,18 +1,32 @@
 .dbOpenButton { border: 1px solid #3b4965; background: #111827; color: #c7d2fe; border-radius: 10px; padding: 7px 9px; white-space: nowrap; }
 .dbOpenButton:hover { border-color: #818cf8; background: #1e1b4b; }
 .dbModalBackdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px; background: rgba(2,6,23,.82); backdrop-filter: blur(6px); }
-.dbModal { width: min(880px, 100%); max-height: min(88vh, 920px); overflow: auto; background: #0f172a; border: 1px solid #475569; border-radius: 18px; padding: 18px; box-shadow: 0 28px 90px rgba(0,0,0,.5); }
+.dbModal { width: min(980px, 100%); max-height: min(90vh, 980px); overflow: auto; background: #0f172a; border: 1px solid #475569; border-radius: 18px; padding: 18px; box-shadow: 0 28px 90px rgba(0,0,0,.5); }
 .dbModalHeader { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; position: sticky; top: -18px; margin: -18px -18px 16px; padding: 18px; background: rgba(15,23,42,.97); border-bottom: 1px solid #263244; z-index: 2; }
 .dbModalHeader h2 { margin: 5px 0 0; }
-.dbClose, .dbModalActions button { border: 1px solid #334155; background: #111827; color: #e5e7eb; border-radius: 10px; padding: 9px 11px; }
+.dbClose, .dbModalActions button, .dbSectionHeader button { border: 1px solid #334155; background: #111827; color: #e5e7eb; border-radius: 10px; padding: 9px 11px; }
 .dbOfficialNotice { padding: 10px 12px; border: 1px solid #4c4a73; border-radius: 10px; background: rgba(49,46,129,.2); color: #c7d2fe; }
 .dbEditGrid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
-.dbEditGrid label { display: grid; gap: 6px; color: #cbd5e1; font-size: .9rem; }
-.dbEditGrid input, .dbEditGrid select, .dbEditGrid textarea { width: 100%; border: 1px solid #334155; border-radius: 10px; padding: 10px 11px; background: #0b1220; color: #f8fafc; font: inherit; }
-.dbEditGrid textarea { min-height: 90px; resize: vertical; }
+.dbEditGrid label, .dbCompactGrid label, .dbAffinityGrid label { display: grid; gap: 6px; color: #cbd5e1; font-size: .9rem; }
+.dbEditGrid input, .dbEditGrid select, .dbEditGrid textarea, .dbCompactGrid select, .dbAffinityGrid select, .dbArrayRow input, .dbArrayRow select, .dbArrayRow textarea { width: 100%; border: 1px solid #334155; border-radius: 10px; padding: 10px 11px; background: #0b1220; color: #f8fafc; font: inherit; }
+.dbEditGrid textarea, .dbArrayRow textarea { min-height: 84px; resize: vertical; }
 .dbEditGrid input:disabled { color: #94a3b8; background: #111827; }
 .dbWide { grid-column: 1 / -1; }
-.dbReferenceDetails { margin-top: 16px; }
+.dbSectionTitle { margin: 22px 0 10px; }
+.dbCompactGrid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; }
+.dbAffinityGrid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
+.dbAffinityGrid label { text-transform: capitalize; }
+.dbSectionHeader { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 22px 0 10px; }
+.dbSectionHeader h3 { margin: 0; }
+.dbSectionHeader button { padding: 7px 9px; color: #c7d2fe; }
+.dbArrayList { display: grid; gap: 10px; }
+.dbArrayRow { display: grid; grid-template-columns: minmax(130px,1.1fr) minmax(120px,.9fr) minmax(110px,.75fr) minmax(220px,2fr) auto; gap: 8px; align-items: start; padding: 10px; border: 1px solid #263244; border-radius: 12px; background: rgba(8,15,29,.48); }
+.dbArrayRow textarea { min-height: 42px; }
+.dbArrayRow .danger { align-self: stretch; }
+.dbTwoField { grid-template-columns: minmax(150px,1fr) minmax(280px,3fr) auto; }
+.dbSpellRow { grid-template-columns: minmax(130px,1fr) 80px minmax(120px,1fr) minmax(120px,1fr) minmax(220px,2fr) auto; }
+.dbReferenceDetails { margin-top: 18px; }
 .dbReferenceDetails pre { overflow: auto; max-height: 260px; padding: 12px; border: 1px solid #334155; border-radius: 10px; background: #080f1d; color: #cbd5e1; font-size: .78rem; white-space: pre-wrap; }
 .dbModalActions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid #263244; }
-@media (max-width: 650px) { .dbModalBackdrop { padding: 8px; } .dbModal { max-height: 94vh; padding: 14px; } .dbEditGrid { grid-template-columns: 1fr; } .dbWide { grid-column: auto; } .dbModalHeader { top: -14px; margin: -14px -14px 14px; padding: 14px; } .dbOpenButton { padding: 6px 8px; font-size: .82rem; } }
+@media (max-width: 820px) { .dbArrayRow, .dbTwoField, .dbSpellRow { grid-template-columns: 1fr 1fr; } .dbArrayRow textarea { grid-column: 1 / -1; } .dbArrayRow .danger { grid-column: 1 / -1; } .dbAffinityGrid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 650px) { .dbModalBackdrop { padding: 8px; } .dbModal { max-height: 94vh; padding: 14px; } .dbEditGrid, .dbCompactGrid, .dbAffinityGrid, .dbArrayRow, .dbTwoField, .dbSpellRow { grid-template-columns: 1fr; } .dbWide, .dbArrayRow textarea, .dbArrayRow .danger { grid-column: auto; } .dbModalHeader { top: -14px; margin: -14px -14px 14px; padding: 14px; } .dbOpenButton { padding: 6px 8px; font-size: .82rem; } .dbSectionHeader { align-items: stretch; flex-direction: column; } }
