@@ -8,6 +8,7 @@ const damageTypes = ['physical','air','bolt','dark','earth','fire','ice','light'
 const affinityValues = ['Normal','Vulnerable','Resistant','Immune','Absorb']
 const dieValues = [6,8,10,12]
 const combatStyles = ['Mixed','Brute','Defender','Controller','Spellcaster','Assassin','Support']
+const itemTypes = ['Weapon','Armor','Shield','Accessory']
 
 function loadRecords(kind: Kind): any[] {
   try {
@@ -184,15 +185,55 @@ export default function DatabaseOverlay() {
           <textarea value={spell.effect || ''} onChange={event => setArrayField('spells', index, 'effect', event.target.value)} placeholder="Spell effect" />
           <button className="danger" onClick={() => removeArrayRow('spells', index)}>Remove</button>
         </div>)}</div>
-      </> : <div className="dbEditGrid">
-        <label>Name<input value={draft.name || ''} onChange={event => set('name', event.target.value)} /></label>
-        <label>Cost (zenit)<input type="number" min="0" value={draft.cost ?? 0} onChange={event => number('cost', event.target.value)} /></label>
-        <label>Type<input value={draft.type || ''} disabled /></label>
-        <label>Category<input value={draft.category || ''} onChange={event => set('category', event.target.value)} /></label>
-        <label className="dbWide">Quality / Customizations<textarea value={draft.quality || ''} onChange={event => set('quality', event.target.value)} /></label>
-        <label className="dbWide">Effect<textarea value={draft.effect || ''} onChange={event => set('effect', event.target.value)} /></label>
-        <label className="dbWide">Origin<textarea value={draft.origin || ''} onChange={event => set('origin', event.target.value)} /></label>
-      </div>}
+      </> : <>
+        <div className="dbEditGrid">
+          <label>Name<input value={draft.name || ''} onChange={event => set('name', event.target.value)} /></label>
+          <label>Cost (zenit)<input type="number" min="0" value={draft.cost ?? 0} onChange={event => number('cost', event.target.value)} /></label>
+          <label>Type<select value={draft.type || 'Accessory'} onChange={event => set('type', event.target.value)}>{itemTypes.map(type => <option key={type}>{type}</option>)}</select></label>
+          <label>Category<input value={draft.category || ''} onChange={event => set('category', event.target.value)} /></label>
+          <label className="dbCheckLabel"><input type="checkbox" checked={!!draft.martial} onChange={event => set('martial', event.target.checked)} /> Martial equipment</label>
+          <label>Base Item<input value={draft.baseItem || ''} onChange={event => set('baseItem', event.target.value)} /></label>
+        </div>
+
+        {draft.type === 'Weapon' && <>
+          <h3 className="dbSectionTitle">Weapon Profile</h3>
+          <div className="dbEditGrid">
+            <label>Handedness<select value={draft.handedness || 'One-handed'} onChange={event => set('handedness', event.target.value)}><option>One-handed</option><option>Two-handed</option></select></label>
+            <label>Range<select value={draft.range || 'Melee'} onChange={event => set('range', event.target.value)}><option>Melee</option><option>Ranged</option></select></label>
+            <label>Accuracy Formula<input value={draft.accuracy || ''} onChange={event => set('accuracy', event.target.value)} placeholder="DEX + MIG" /></label>
+            <label>Accuracy Bonus<input type="number" value={draft.accuracyBonus ?? 0} onChange={event => number('accuracyBonus', event.target.value)} /></label>
+            <label>HR Damage Bonus<input type="number" value={draft.damage ?? 0} onChange={event => number('damage', event.target.value)} /></label>
+            <label>Damage Type<select value={draft.damageType || 'physical'} onChange={event => set('damageType', event.target.value)}>{damageTypes.map(type => <option key={type}>{type}</option>)}</select></label>
+          </div>
+        </>}
+
+        {(draft.type === 'Armor' || draft.type === 'Shield') && <>
+          <h3 className="dbSectionTitle">Defensive Profile</h3>
+          <div className="dbEditGrid">
+            <label>Defense<input value={draft.defense || ''} onChange={event => set('defense', event.target.value)} placeholder="DEX +1 or 11" /></label>
+            <label>Magic Defense<input value={draft.magicDefense || ''} onChange={event => set('magicDefense', event.target.value)} placeholder="INS +1 or +2" /></label>
+            <label>Initiative Modifier<input type="number" value={draft.initiative ?? 0} onChange={event => number('initiative', event.target.value)} /></label>
+          </div>
+        </>}
+
+        <h3 className="dbSectionTitle">Quality & Effect</h3>
+        <div className="dbEditGrid">
+          <label className="dbWide">Quality / Customizations<textarea value={draft.quality || ''} onChange={event => set('quality', event.target.value)} /></label>
+          <label className="dbWide">Effect<textarea value={draft.effect || ''} onChange={event => set('effect', event.target.value)} /></label>
+          <label className="dbWide">Origin<textarea value={draft.origin || ''} onChange={event => set('origin', event.target.value)} /></label>
+        </div>
+
+        {draft.material && <>
+          <h3 className="dbSectionTitle">Material</h3>
+          <div className="dbEditGrid">
+            <label>Name<input value={draft.material.name || ''} onChange={event => setNested('material', 'name', event.target.value)} /></label>
+            <label>Nature<input value={draft.material.nature || ''} onChange={event => setNested('material', 'nature', event.target.value)} /></label>
+            <label>Descriptor<input value={draft.material.descriptorKind || ''} onChange={event => setNested('material', 'descriptorKind', event.target.value)} /></label>
+            <label>Element<input value={draft.material.element || ''} onChange={event => setNested('material', 'element', event.target.value)} /></label>
+            <label className="dbWide">Function<input value={draft.material.function || ''} onChange={event => setNested('material', 'function', event.target.value)} /></label>
+          </div>
+        </>}
+      </>}
 
       <details className="dbReferenceDetails">
         <summary>Full stored record</summary>
