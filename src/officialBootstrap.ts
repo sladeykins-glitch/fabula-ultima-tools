@@ -4,7 +4,7 @@ const VERSION_KEY = 'fu-official-data-version'
 const REQUIRED_MONSTER_IDS = [
   'official-core-cutterpillar',
   'official-high-eileen',
-  'official-natural-tonitranea-rex',
+  'official-natural-tonitranea-thorax',
   'official-techno-commissioner-vyne',
   'official-techno-syntech-cop',
 ]
