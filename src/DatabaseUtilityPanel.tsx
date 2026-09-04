@@ -10,6 +10,13 @@ const VIEW_KEY = 'fu-db-view-modes-native'
 const SELECTION_KEY = 'fu-db-selection'
 const PAGE_SIZE_KEY = 'fu-db-page-size'
 
+const CORE_RARE_ARMOR_PAGE_281 = new Set([
+  'Slimy Jacket','Fox Garb','Shadow Tunic','Desperado Coat','Butler Uniform','Maid Uniform','Bandit Jacket','Crystal Plate','Valkyrie Wings','Armor of Heroes',
+])
+const CORE_RARE_ARMOR_PAGE_282 = new Set([
+  'Black Belt','Meditation Robe','Archmage Robe','Automaton Suit','Adamantorso','Ardent Yoroi','Demongrin','Bio Plate','White Tunic','Granny Vest','Black Tunic','Red Tunic',
+])
+
 function readJson<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key)
@@ -68,7 +75,18 @@ function escapeHtml(value: unknown) {
 
 function sourcePage(record: any) {
   const text = [...(Array.isArray(record?.notes) ? record.notes : []), ...(Array.isArray(record?.breakdown) ? record.breakdown : [])].join(' ')
-  return text.match(/printed page\s+(\d+)/i)?.[1] || ''
+  const explicit = text.match(/printed page\s+(\d+)/i)?.[1]
+  if (explicit) return explicit
+
+  const origin = String(record?.origin || '')
+  if (origin === 'High Fantasy Atlas · Rare Armor' || origin === 'High Fantasy Atlas · Rare Shield') return '80'
+  if (origin === 'High Fantasy Atlas · Accessory') return '81'
+  if (origin === 'Core Rulebook · Rare Shield') return '283'
+  if (origin === 'Core Rulebook · Rare Armor') {
+    if (CORE_RARE_ARMOR_PAGE_281.has(record?.name)) return '281'
+    if (CORE_RARE_ARMOR_PAGE_282.has(record?.name)) return '282'
+  }
+  return ''
 }
 
 function sourceBook(record: any) {
@@ -166,8 +184,9 @@ export default function DatabaseUtilityPanel() {
   useEffect(()=>{
     const timer=window.setTimeout(()=>{setTarget(document.querySelector<HTMLElement>('.shell > header'));refresh()},0)
     const onClick=()=>window.setTimeout(refresh,0)
-    document.addEventListener('click',onClick); window.addEventListener('fu-open-record',onClick)
-    return()=>{window.clearTimeout(timer);document.removeEventListener('click',onClick);window.removeEventListener('fu-open-record',onClick)}
+    document.addEventListener('click',onClick); window.addEventListener('fu-open-record',onOpen)
+    function onOpen(){ window.setTimeout(refresh,0) }
+    return()=>{window.clearTimeout(timer);document.removeEventListener('click',onClick);window.removeEventListener('fu-open-record',onOpen)}
   },[])
 
   const records = useMemo(()=>allRecords(kind),[kind,selected,healthOpen])
@@ -183,9 +202,9 @@ export default function DatabaseUtilityPanel() {
   return createPortal(<div className="databaseUtilityPanel" aria-label="Database display and selected record tools">
     <label className="dbPageSize">Cards <select value={pageSize} onChange={e=>changePageSize(Number(e.target.value) as PageSize)}><option value={12}>12</option><option value={24}>24</option><option value={48}>48</option></select></label>
     <div className="dbViewSwitch"><button type="button" className={view==='full'?'active':''} onClick={()=>changeView('full')}>Full</button><button type="button" className={view==='compact'?'active':''} onClick={()=>changeView('compact')}>Compact</button></div>
-    {kind === 'monster' && official.length > 0 && <span className="dbAuditStatus" title="Official monster profiles with a verified printed source page">Audit <b>{verified}</b>/{official.length}</span>}
+    {official.length > 0 && <span className="dbAuditStatus" title="Official records with a verified printed source page">Audit <b>{verified}</b>/{official.length}</span>}
     {selected.length>0&&<div className="dbSelectedTools"><span>{selected.length} selected</span><button type="button" onClick={()=>{void navigator.clipboard?.writeText(asMarkdown(kind,selected));flash('Copied full stat blocks')}}>Copy</button><button type="button" onClick={()=>{exportRows(kind,selected);flash('Exported selected')}}>Export</button><button type="button" onClick={()=>{if(!printRows(kind,selected))flash('Allow pop-ups to print')}}>Print cards</button></div>}
-    <div className="dbHealthWrap"><button type="button" className={unhealthy.length?'warning':''} onClick={()=>setHealthOpen(v=>!v)} aria-expanded={healthOpen}>Data health {unhealthy.length?`(${unhealthy.length})`:'✓'}</button>{healthOpen&&<div className="dbHealthMenu"><strong>{kind==='monster'?'Monster':'Item'} data health</strong>{kind === 'monster' && <p>Official source pages verified: <b>{verified}/{official.length}</b>.</p>}{unhealthy.length===0?<p>All custom records pass the basic structural checks.</p>:unhealthy.slice(0,12).map(({record,issues})=><div className="dbHealthRow" key={record.id}><b>{record.name||'Unnamed record'}</b><span>{issues.join(' · ')}</span></div>)}</div>}</div>
+    <div className="dbHealthWrap"><button type="button" className={unhealthy.length?'warning':''} onClick={()=>setHealthOpen(v=>!v)} aria-expanded={healthOpen}>Data health {unhealthy.length?`(${unhealthy.length})`:'✓'}</button>{healthOpen&&<div className="dbHealthMenu"><strong>{kind==='monster'?'Monster':'Item'} data health</strong><p>Official source pages verified: <b>{verified}/{official.length}</b>.</p>{unhealthy.length===0?<p>All custom records pass the basic structural checks.</p>:unhealthy.slice(0,12).map(({record,issues})=><div className="dbHealthRow" key={record.id}><b>{record.name||'Unnamed record'}</b><span>{issues.join(' · ')}</span></div>)}</div>}</div>
     {message&&<span className="dbUtilityMessage" role="status">{message}</span>}
   </div>,target)
 }
