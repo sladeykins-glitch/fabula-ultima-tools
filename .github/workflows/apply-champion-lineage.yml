@@ -1,0 +1,24 @@
+name: Apply Champion Budget and Lineage
+on:
+  push:
+    paths:
+      - 'scripts/apply-champion-lineage.py'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: python scripts/apply-champion-lineage.py
+      - run: npm install
+      - run: npm run build
+      - run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/monsterThemeEngine.ts src/generatorEvolution.ts
+          git commit -m "Keep Champion phases in budget and strengthen variant lineage" || exit 0
+          git push
