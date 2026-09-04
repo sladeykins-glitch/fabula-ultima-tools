@@ -1,0 +1,76 @@
+.sessionUtilityTools {
+  position: relative;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.sessionUtilityTools > button {
+  white-space: nowrap;
+}
+
+.recentMenu {
+  position: absolute;
+  z-index: 45;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(360px, calc(100vw - 28px));
+  max-height: 70vh;
+  overflow: auto;
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  background: #0b1220;
+  box-shadow: 0 20px 55px rgba(0,0,0,.42);
+}
+
+.recentMenuTitle {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  padding: 4px 5px 8px;
+  border-bottom: 1px solid #263244;
+}
+
+.recentMenuTitle span,
+.recentMenu small,
+.recentMenu p {
+  color: #94a3b8;
+  font-size: .78rem;
+}
+
+.recentMenu > button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+}
+
+.recentMenu > button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recentClear {
+  margin-top: 4px;
+  justify-content: center !important;
+  color: #cbd5e1;
+}
+
+@media (max-width: 700px) {
+  .sessionUtilityTools {
+    margin-left: 0;
+  }
+
+  .recentMenu {
+    position: fixed;
+    top: 78px;
+    right: 12px;
+  }
+}
