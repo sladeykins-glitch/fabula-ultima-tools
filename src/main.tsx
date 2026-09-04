@@ -7,6 +7,7 @@ import SiteBackupTools from './SiteBackupTools'
 import PwaTools from './PwaTools'
 import './styles.css'
 import './performance.css'
+import './nativePagination.css'
 
 /*
  * Stability-first runtime.
