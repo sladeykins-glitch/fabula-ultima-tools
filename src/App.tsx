@@ -13,6 +13,16 @@ const combatStyles: CombatStyle[] = ['Mixed','Brute','Defender','Controller','Sp
 const materialNatures: (MaterialNature|'Random')[] = ['Random','Animal','Fungal','Incorporeal','Liquid','Artificial','Mineral','Plant']
 const materialFunctions: (MaterialFunction|'Random')[] = ['Random','Agility and Precision','Damage and Power','Protection','Recovery','Sabotage','Support']
 
+const combatTactics: Record<CombatStyle, string> = {
+  Mixed: 'Adapt to the battlefield. Open with the safest attack or spell, then pivot toward whichever option pressures the party most effectively.',
+  Brute: 'Close aggressively and keep dealing damage. Prioritize weakened or exposed targets, use high-impact attacks early, and become even more dangerous in Crisis.',
+  Defender: 'Occupy the centre of the fight and protect allies. Punish enemies that ignore you, use reactions to disrupt attacks, and make yourself difficult to remove.',
+  Controller: 'Disrupt the party before chasing damage. Spread status effects, deny key actions, and focus on keeping dangerous heroes slowed, weakened, or otherwise constrained.',
+  Spellcaster: 'Protect your MP and fight from a safe position. Use spells to exploit Affinities or statuses, then save stronger effects for clustered enemies or Crisis turns.',
+  Assassin: 'Target vulnerable enemies and exploit status effects. Strike quickly, focus one target at a time, and use reactions or mobility-style effects to avoid prolonged trades.',
+  Support: 'Strengthen allies and interfere with enemy momentum. Use healing, buffs, reactions, and setup effects first; attack directly when there is no higher-value support action.',
+}
+
 export default function App() {
   const [tab, setTab] = useState<Tab>('Monster Database')
   const [monsters, setMonsters] = useState<Monster[]>(() => JSON.parse(localStorage.getItem('fu-monsters') || '[]'))
@@ -54,6 +64,8 @@ function MonsterCard({ monster, onDelete }: { monster: Monster; onDelete?:()=>vo
   const notes = monster.notes || []
   const attacks = monster.attacks || []
   const affinities = monster.affinities || Object.fromEntries(damageTypes.map(t => [t, 'Normal'])) as Monster['affinities']
+  const style = monster.combatStyle || 'Mixed'
+
   return <article className="card monsterCard">
     <div className="cardTitle">
       <div><span className="source">{monster.source}</span><h2>{monster.name}</h2></div>
@@ -64,6 +76,7 @@ function MonsterCard({ monster, onDelete }: { monster: Monster; onDelete?:()=>vo
     <div className="dice"><span>DEX d{monster.attributes.dex}</span><span>INS d{monster.attributes.ins}</span><span>MIG d{monster.attributes.mig}</span><span>WLP d{monster.attributes.wlp}</span><span>ACC +{monster.accuracyBonus ?? Math.floor(monster.level/10)}</span><span>MAG +{monster.magicBonus ?? Math.floor(monster.level/10)}</span></div>
     <p><strong>Traits:</strong> {monster.traits.join(', ')}</p>
     <div className="affinities">{damageTypes.filter(t=>affinities[t] !== 'Normal').map(t=><span key={t}>{t}: {affinities[t]}</span>)}</div>
+    <div className="tacticsBox"><strong>Tactics — {style}</strong><span>{combatTactics[style]}</span></div>
     <h3>Basic Attacks</h3>
     {attacks.map((a,i)=><div key={i} className="attack"><b>{a.name}</b> — {a.formula} {a.damageType}{a.effect && <div className="attackEffect">Effect: {a.effect}</div>}</div>)}
     {skills.length > 0 && <><h3>NPC Skills</h3><div className="skillList">{skills.map((sk,i)=><div className="skillBox" key={`${sk.name}-${i}`}><strong>{sk.name}</strong><span>{sk.summary}</span></div>)}</div></>}
@@ -112,7 +125,7 @@ function MonsterGenerator({ onSave }: { onSave: (m:Monster)=>void }) {
       <label>Complexity<select value={complexity} onChange={e=>setComplexity(e.target.value as typeof complexity)}><option>Simple</option><option>Standard</option><option>Crunchy</option></select></label>
       <p className="muted smallText">Complexity is a generator convenience, not an official NPC rule. It changes how involved the generated skill set tends to be.</p>
       <label>Combat style<select value={combatStyle} onChange={e=>setCombatStyle(e.target.value as CombatStyle)}>{combatStyles.map(style=><option key={style}>{style}</option>)}</select></label>
-      <p className="muted smallText">Combat style biases legal skill and attack choices without granting extra bonuses.</p>
+      <p className="muted smallText">Combat style shapes Attribute priorities, attack patterns, spell choices, skills, reactions, Crisis effects, and tactical guidance without adding a separate bonus budget.</p>
       <button className="primary" onClick={make}>Generate Monster</button>
     </div>
     <div className="panel preview">
