@@ -4,11 +4,11 @@ import './databaseUtilityPanel.css'
 
 type Kind = 'monster' | 'item'
 type ViewMode = 'full' | 'compact'
-
-type SelectionState = { monster: string[]; item: string[] }
+type PageSize = 12 | 24 | 48
 
 const VIEW_KEY = 'fu-db-view-modes-native'
 const SELECTION_KEY = 'fu-db-selection'
+const PAGE_SIZE_KEY = 'fu-db-page-size'
 
 function readJson<T>(key: string, fallback: T): T {
   try {
@@ -126,12 +126,18 @@ function decorateSourcePages() {
   })
 }
 
+function currentPageSize(): PageSize {
+  const value = Number(localStorage.getItem(PAGE_SIZE_KEY) || '24')
+  return value === 12 || value === 48 ? value : 24
+}
+
 export default function DatabaseUtilityPanel() {
   const [target, setTarget] = useState<HTMLElement | null>(null)
   const [kind, setKind] = useState<Kind>(activeKind)
   const [selected, setSelected] = useState<any[]>(() => selectedRecords(activeKind()))
   const [healthOpen, setHealthOpen] = useState(false)
   const [message, setMessage] = useState('')
+  const [pageSize, setPageSize] = useState<PageSize>(currentPageSize)
   const [view, setView] = useState<ViewMode>(() => {
     const state = readJson<Record<Kind,ViewMode>>(VIEW_KEY, { monster:'full', item:'full' })
     return state[activeKind()] === 'compact' ? 'compact' : 'full'
@@ -141,6 +147,7 @@ export default function DatabaseUtilityPanel() {
     const nextKind = activeKind()
     setKind(nextKind)
     setSelected(selectedRecords(nextKind))
+    setPageSize(currentPageSize())
     const state = readJson<Record<Kind,ViewMode>>(VIEW_KEY, { monster:'full', item:'full' })
     const nextView = state[nextKind] === 'compact' ? 'compact' : 'full'
     setView(nextView)
@@ -168,9 +175,17 @@ export default function DatabaseUtilityPanel() {
     document.documentElement.dataset.fuDbView = next
   }
 
+  const changePageSize = (next: PageSize) => {
+    if (next === pageSize) return
+    localStorage.setItem(PAGE_SIZE_KEY, String(next))
+    setPageSize(next)
+    window.location.reload()
+  }
+
   const flash = (text: string) => { setMessage(text); window.setTimeout(()=>setMessage(''), 1600) }
 
   return createPortal(<div className="databaseUtilityPanel" aria-label="Database display and selected record tools">
+    <label className="dbPageSize">Cards <select value={pageSize} onChange={event=>changePageSize(Number(event.target.value) as PageSize)}><option value={12}>12</option><option value={24}>24</option><option value={48}>48</option></select></label>
     <div className="dbViewSwitch" role="group" aria-label="Database card view">
       <button type="button" className={view === 'full' ? 'active' : ''} onClick={()=>changeView('full')}>Full</button>
       <button type="button" className={view === 'compact' ? 'active' : ''} onClick={()=>changeView('compact')}>Compact</button>
