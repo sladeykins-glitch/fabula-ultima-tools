@@ -1,0 +1,64 @@
+/* Regional visual language for Aestra generator contexts.
+   The generator sets data-aestra-region on the document root; this layer keeps
+   all mechanics untouched while letting each culture tint the same archive UI. */
+
+:root[data-aestra-region="Garlond"] {
+  --brass:#a6adb0; --brass-bright:#d9dedf; --crystal:#8fb7c2; --crystal-bright:#c6e0e5; --moss:#657074;
+}
+:root[data-aestra-region="Rübenberg"] {
+  --brass:#d4b36e; --brass-bright:#f0d797; --crystal:#87d7c8; --crystal-bright:#c6f5e9; --moss:#718b6c;
+}
+:root[data-aestra-region="Palmeria"] {
+  --brass:#d7bc72; --brass-bright:#f4dda0; --crystal:#9bb9e8; --crystal-bright:#d4e3ff; --moss:#7a7764;
+}
+:root[data-aestra-region="Valdoria"] {
+  --brass:#c08b62; --brass-bright:#e5b184; --crystal:#8ab69d; --crystal-bright:#bfe0ca; --moss:#68745d;
+}
+:root[data-aestra-region="Aestra"] {
+  --brass:#b7a778; --brass-bright:#e2d4a1; --crystal:#83cbb9; --crystal-bright:#b9eddf; --moss:#6f8564;
+}
+
+:root[data-aestra-region] body::after {
+  position:fixed; right:18px; bottom:14px; z-index:1; pointer-events:none;
+  padding:5px 8px; border:1px solid color-mix(in srgb,var(--crystal) 28%,transparent);
+  background:rgba(5,13,14,.72); color:color-mix(in srgb,var(--crystal-bright) 58%,transparent);
+  font:700 .61rem/1 Georgia,"Times New Roman",serif; letter-spacing:.2em; text-transform:uppercase;
+}
+:root[data-aestra-region="Garlond"] body::after { content:"GARLOND // STATE ARCHIVE"; }
+:root[data-aestra-region="Rübenberg"] body::after { content:"RÜBENBERG // WINDWORKS"; }
+:root[data-aestra-region="Palmeria"] body::after { content:"PALMERIA // IMPERIAL THESIS"; }
+:root[data-aestra-region="Valdoria"] body::after { content:"VALDORIA // WARREN RECORD"; }
+:root[data-aestra-region="Aestra"] body::after { content:"AESTRA // UNCONTROLLED LANDS"; }
+
+:root[data-aestra-region="Garlond"] body {
+  background-image:linear-gradient(90deg,rgba(150,170,176,.035) 1px,transparent 1px),linear-gradient(rgba(150,170,176,.025) 1px,transparent 1px),radial-gradient(circle at 18% 0,rgba(116,153,165,.12),transparent 28rem),linear-gradient(#0a1112,#080d0e);
+  background-size:28px 28px,28px 28px,auto,auto;
+}
+:root[data-aestra-region="Garlond"] .card, :root[data-aestra-region="Garlond"] .panel { border-left-width:3px; }
+:root[data-aestra-region="Garlond"] .card::after { content:"Г"; position:absolute; right:11px; top:8px; color:rgba(198,224,229,.10); font-weight:900; font-size:1.25rem; }
+
+:root[data-aestra-region="Rübenberg"] body {
+  background-image:radial-gradient(circle at 18% 4%,rgba(135,215,200,.13),transparent 26rem),repeating-linear-gradient(120deg,transparent 0 46px,rgba(135,215,200,.018) 47px 48px),linear-gradient(#0b1515,#091011);
+}
+:root[data-aestra-region="Rübenberg"] .card::after { content:"✣"; position:absolute; right:11px; top:7px; color:rgba(198,245,233,.14); font-size:1.2rem; }
+
+:root[data-aestra-region="Palmeria"] body {
+  background-image:radial-gradient(circle at 50% -8%,rgba(155,185,232,.14),transparent 31rem),linear-gradient(60deg,transparent 48%,rgba(215,188,114,.018) 49% 51%,transparent 52%),linear-gradient(#10151a,#0a1013);
+  background-size:auto,52px 52px,auto;
+}
+:root[data-aestra-region="Palmeria"] .card::after { content:"◇"; position:absolute; right:11px; top:5px; color:rgba(244,221,160,.17); font-size:1.4rem; }
+:root[data-aestra-region="Palmeria"] h2, :root[data-aestra-region="Palmeria"] h3 { letter-spacing:.045em; }
+
+:root[data-aestra-region="Valdoria"] body {
+  background-image:linear-gradient(115deg,rgba(192,139,98,.035),transparent 24%),repeating-linear-gradient(0deg,transparent 0 31px,rgba(138,182,157,.018) 32px 33px),linear-gradient(#111412,#090d0c);
+}
+:root[data-aestra-region="Valdoria"] .card, :root[data-aestra-region="Valdoria"] .panel { box-shadow:7px 9px 0 rgba(0,0,0,.12),0 12px 28px rgba(0,0,0,.22); }
+:root[data-aestra-region="Valdoria"] .card::after { content:"//"; position:absolute; right:10px; top:8px; color:rgba(229,177,132,.16); font-weight:900; letter-spacing:-.1em; }
+
+:root[data-aestra-region="Aestra"] body {
+  background-image:radial-gradient(circle at 14% 2%,rgba(131,203,185,.11),transparent 28rem),radial-gradient(circle at 84% 22%,rgba(111,133,100,.10),transparent 24rem),linear-gradient(135deg,transparent 48%,rgba(185,237,223,.014) 49% 50%,transparent 51%),linear-gradient(#0b1412,#080e0d);
+  background-size:auto,auto,44px 44px,auto;
+}
+:root[data-aestra-region="Aestra"] .card::after { content:"✦"; position:absolute; right:11px; top:7px; color:rgba(185,237,223,.13); }
+
+@media(max-width:760px){ :root[data-aestra-region] body::after{display:none;} }
