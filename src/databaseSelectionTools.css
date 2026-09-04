@@ -1,0 +1,9 @@
+.dbSelectionBar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0 0 12px; padding:9px 10px; border:1px solid #334155; border-radius:12px; background:rgba(8,15,29,.58); }
+.dbSelectionBar > span { color:#94a3b8; font-size:.86rem; margin-right:auto; }
+.dbSelectionBar > span strong { color:#e5e7eb; }
+.dbSelectionBar button, .dbSelectButton { border:1px solid #334155; background:#111827; color:#e5e7eb; border-radius:10px; padding:7px 9px; }
+.dbSelectionBar button:hover:not(:disabled), .dbSelectButton:hover { border-color:#818cf8; }
+.dbSelectionBar button:disabled { opacity:.42; cursor:not-allowed; }
+.dbSelectButton.active { background:#312e81; border-color:#818cf8; color:#eef2ff; }
+.dbSelectedCard { outline:2px solid rgba(129,140,248,.6); outline-offset:2px; }
+@media (max-width:650px) { .dbSelectionBar { align-items:stretch; } .dbSelectionBar > span { flex-basis:100%; margin-right:0; } .dbSelectionBar button { flex:1 1 130px; } }
