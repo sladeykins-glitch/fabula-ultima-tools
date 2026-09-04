@@ -81,3 +81,4 @@ export function createMonsterVariant(base:Monster,variant:MonsterVariant):Monste
 '''
 s=s[:start]+new_func+s[end:]
 p.write_text(s)
+# migration trigger v2
