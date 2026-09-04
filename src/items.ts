@@ -168,6 +168,17 @@ function sampleTwo<T>(arr: readonly T[]): [T,T] {
   return [first, second]
 }
 
+function weightedPick<T>(values: readonly T[], weightFor: (value:T)=>number): T {
+  const weighted = values.map(value => ({ value, weight: Math.max(1, Math.round(weightFor(value))) }))
+  const total = weighted.reduce((sum, entry) => sum + entry.weight, 0)
+  let roll = Math.floor(Math.random() * total)
+  for (const entry of weighted) {
+    roll -= entry.weight
+    if (roll < 0) return entry.value
+  }
+  return weighted[weighted.length - 1].value
+}
+
 function parameterFor(q: Quality): string | undefined {
   switch (q.parameter) {
     case 'status-basic': return pick(statusesBasic)
@@ -178,6 +189,54 @@ function parameterFor(q: Quality): string | undefined {
     case 'species-two': { const [a,b] = sampleTwo(species); return `${a} or ${b}` }
     case 'weapon-range': return pick(['melee','ranged'])
   }
+}
+
+function weaponQualityWeight(q: Quality, base: BaseWeapon, damageType: DamageType): number {
+  const offensive = ['Magical','Hunter','Piercing','Dual Hunter','Multi','Status','Status Plus']
+  const defensive = ['Antistatus','Resistance','Amulet','Bulwark','Dual Resistance','Swordbreaker','Immunity','Omnishield','Perfect Health']
+  let weight = 2
+
+  if (offensive.includes(q.name)) weight += 2
+  if (defensive.includes(q.name)) weight -= 1
+  if (base.category === 'Arcane' && ['Magical','Status','Status Plus'].includes(q.name)) weight += 3
+  if (base.range === 'Ranged' && ['Hunter','Dual Hunter','Multi','Piercing'].includes(q.name)) weight += 2
+  if (['Heavy','Spear','Sword','Brawling'].includes(base.category) && ['Piercing','Hunter','Dual Hunter'].includes(q.name)) weight += 2
+  if (['Dagger','Flail','Thrown'].includes(base.category) && ['Status','Status Plus','Magical'].includes(q.name)) weight += 2
+  if (damageType !== 'physical' && q.name === 'Magical') weight += 1
+  if (base.handedness === 'One-handed' && ['Bulwark','Amulet'].includes(q.name)) weight += 1
+
+  return Math.max(1, weight)
+}
+
+function armorQualityWeight(q: Quality, base: BaseArmor): number {
+  const defensive = ['Antistatus','Resistance','Dual Resistance','Swordbreaker','Immunity','Perfect Health']
+  const offensiveSupport = ['Initiative Up','Accuracy Up','Magic Up','Vitality Up','Healing Up','Spell Up','Weapon Up']
+  let weight = 2
+
+  if (base.martial && defensive.includes(q.name)) weight += 3
+  if (base.martial && ['Accuracy Up','Weapon Up','Vitality Up'].includes(q.name)) weight += 1
+  if (!base.martial && offensiveSupport.includes(q.name)) weight += 2
+  if (base.name === 'Sage Robe' && ['Magic Up','Healing Up','Spell Up','Vitality Up'].includes(q.name)) weight += 3
+  if (base.name === 'Combat Tunic' && ['Initiative Up','Accuracy Up','Weapon Up'].includes(q.name)) weight += 2
+  if (base.name.includes('Plate') && ['Resistance','Dual Resistance','Swordbreaker','Immunity'].includes(q.name)) weight += 2
+
+  return Math.max(1, weight)
+}
+
+function shieldQualityWeight(q: Quality, base: BaseShield): number {
+  const defensive = ['Antistatus','Resistance','Dual Resistance','Swordbreaker','Immunity','Perfect Health']
+  let weight = defensive.includes(q.name) ? 5 : 2
+  if (base.name === 'Runic Shield' && ['Magic Up','Healing Up','Spell Up','Resistance','Immunity'].includes(q.name)) weight += 2
+  if (['Initiative Up','Accuracy Up','Weapon Up'].includes(q.name)) weight += 1
+  return Math.max(1, weight)
+}
+
+function accessoryQualityWeight(q: Quality): number {
+  const versatile = ['Damage Change','Initiative Up','Accuracy Up','Magic Up','Vitality Up','Resistance','Antistatus']
+  const premium = ['Omnishield','Perfect Health','Spell Up','Weapon Up','Healing Up','Immunity']
+  let weight = versatile.includes(q.name) ? 4 : 2
+  if (premium.includes(q.name)) weight += 1
+  return weight
 }
 
 const prefixes = ['Ashen','Moonlit','Runic','Storm','Crimson','Verdant','Ivory','Gilded','Grave','Starforged','Silent','Radiant']
@@ -243,7 +302,7 @@ export function generateItem(options: {
     }
 
     const qualityChoices = weaponQualities.filter(q => cost + q.cost <= maxCost)
-    const quality = qualityChoices.length ? pick(qualityChoices) : undefined
+    const quality = qualityChoices.length ? weightedPick(qualityChoices, q => weaponQualityWeight(q, base, damageType)) : undefined
     const param = quality ? parameterFor(quality) : undefined
     const effect = quality ? quality.effect(param) : 'No Quality; generated as a modified rare weapon.'
     if (quality) {
@@ -263,7 +322,7 @@ export function generateItem(options: {
     const candidates = baseArmors.filter(a => (allowMartial || !a.martial) && a.cost < maxCost)
     const base = pick(candidates.length ? candidates : baseArmors.filter(a=>!a.martial))
     const qualityChoices = armorShieldQualities.filter(q => base.cost + q.cost <= maxCost)
-    const quality = qualityChoices.length ? pick(qualityChoices) : undefined
+    const quality = qualityChoices.length ? weightedPick(qualityChoices, q => armorQualityWeight(q, base)) : undefined
     const param = quality ? parameterFor(quality) : undefined
     const effect = quality ? quality.effect(param) : 'No Quality available within this cost limit.'
     const cost = base.cost + (quality?.cost || 0)
@@ -274,7 +333,7 @@ export function generateItem(options: {
     const candidates = baseShields.filter(s => (allowMartial || !s.martial) && s.cost < maxCost)
     const base = pick(candidates.length ? candidates : baseShields.filter(s=>!s.martial))
     const qualityChoices = armorShieldQualities.filter(q => base.cost + q.cost <= maxCost)
-    const quality = qualityChoices.length ? pick(qualityChoices) : undefined
+    const quality = qualityChoices.length ? weightedPick(qualityChoices, q => shieldQualityWeight(q, base)) : undefined
     const param = quality ? parameterFor(quality) : undefined
     const effect = quality ? quality.effect(param) : 'No Quality available within this cost limit.'
     const cost = base.cost + (quality?.cost || 0)
@@ -282,7 +341,8 @@ export function generateItem(options: {
   }
 
   const qualityChoices = accessoryQualities.filter(q => q.cost <= maxCost)
-  const quality = pick(qualityChoices.length ? qualityChoices : accessoryQualities)
+  const available = qualityChoices.length ? qualityChoices : accessoryQualities
+  const quality = weightedPick(available, accessoryQualityWeight)
   const param = parameterFor(quality)
   return { id:crypto.randomUUID(), name:itemName('Accessory'), type:'Accessory', source:'Generated', cost:quality.cost, martial:false, quality:quality.name, effect:quality.effect(param), breakdown:[`${quality.name}: ${quality.cost}z`] }
 }
