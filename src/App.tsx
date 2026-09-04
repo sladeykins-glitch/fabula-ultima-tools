@@ -79,7 +79,7 @@ export default function App() {
   )
 }
 
-function MonsterCard({ monster, onDelete }: { monster: Monster; onDelete?:()=>void }) {
+function MonsterCard({ monster, onDelete, database = false }: { monster: Monster; onDelete?:()=>void; database?: boolean }) {
   const skills = monster.skills || []
   const spells = monster.spells || []
   const notes = monster.notes || []
@@ -88,10 +88,17 @@ function MonsterCard({ monster, onDelete }: { monster: Monster; onDelete?:()=>vo
   const style = monster.combatStyle || 'Mixed'
   const librarySource = monsterLibrarySource(monster)
 
-  return <article className="card monsterCard">
+  return <article
+    className="card monsterCard"
+    data-db-record-id={database ? monster.id : undefined}
+    data-db-record-kind={database ? 'monster' : undefined}
+  >
     <div className="cardTitle">
       <div><span className="source">{monster.source}{monster.source === 'Official' ? ` · ${librarySource}` : ''}</span><h2>{monster.name}</h2></div>
-      {onDelete && <button className="danger" onClick={onDelete}>Delete</button>}
+      {database && <div className="cardActions">
+        <button type="button" className="dbOpenButton" data-db-open="monster" data-db-record-id={monster.id}>Open / Edit</button>
+        {onDelete && <button className="danger" onClick={onDelete}>Delete</button>}
+      </div>}
     </div>
     <p className="muted">Lv {monster.level} · {monster.rank} · {monster.species}{monster.combatStyle ? ` · ${monster.combatStyle}` : ''}</p>
     <div className="stats"><b>HP {monster.hp}</b><b>Crisis {monster.crisis ?? Math.floor(monster.hp/2)}</b><b>MP {monster.mp}</b><b>Init {monster.initiative}</b><b>DEF {monster.defense}</b><b>M.DEF {monster.magicDefense}</b><b>Turns {monster.turnsPerRound || 1}</b></div>
@@ -139,6 +146,7 @@ function MonsterDatabase({ monsters, setMonsters, search, setSearch }: { monster
     champions: filtered.filter(m=>m.rank==='Champion').length,
     spellcasters: filtered.filter(m=>(m.spells || []).length > 0).length,
     official: filtered.filter(m=>m.source==='Official').length,
+    custom: filtered.filter(m=>m.source!=='Official').length,
     averageLevel: filtered.length ? Math.round(filtered.reduce((total,m)=>total+m.level,0) / filtered.length) : 0,
   }), [filtered])
 
@@ -153,10 +161,18 @@ function MonsterDatabase({ monsters, setMonsters, search, setSearch }: { monster
       <span>{filtered.length} entries</span>
     </div>
     <div className="databaseSummary">
-      <span>Official <b>{summary.official}</b></span><span>Soldiers <b>{summary.soldiers}</b></span><span>Elites <b>{summary.elites}</b></span><span>Champions <b>{summary.champions}</b></span><span>Spellcasters <b>{summary.spellcasters}</b></span><span>Avg Lv <b>{summary.averageLevel}</b></span>
+      <span>Official <b>{summary.official}</b></span><span>Custom <b>{summary.custom}</b></span><span>Soldiers <b>{summary.soldiers}</b></span><span>Elites <b>{summary.elites}</b></span><span>Champions <b>{summary.champions}</b></span><span>Spellcasters <b>{summary.spellcasters}</b></span><span>Avg Lv <b>{summary.averageLevel}</b></span>
     </div>
     {filtered.length === 0 ? <Empty text="No matching monsters saved yet. Generate one to start your database." /> : <div className="grid">
-      {filtered.map(m => <MonsterCard key={m.id} monster={m} onDelete={()=>setMonsters(prev=>prev.filter(x=>x.id!==m.id))} />)}
+      {filtered.map(m => <MonsterCard
+        key={m.id}
+        monster={m}
+        database
+        onDelete={m.source === 'Official' ? undefined : () => {
+          if (!window.confirm(`Delete “${m.name}”? This cannot be undone unless you have a backup.`)) return
+          setMonsters(prev=>prev.filter(x=>x.id!==m.id))
+        }}
+      />)}
     </div>}
   </section>
 }
@@ -232,6 +248,7 @@ function ItemDatabase({ items, setItems }: { items: AppItem[]; setItems: React.D
     shields: filtered.filter(i=>i.type==='Shield').length,
     accessories: filtered.filter(i=>i.type==='Accessory').length,
     official: filtered.filter(i=>i.source==='Official').length,
+    custom: filtered.filter(i=>i.source!=='Official').length,
     martial: filtered.filter(i=>!!i.martial).length,
     materials: filtered.filter(i=>!!i.material).length,
     averageCost: filtered.length ? Math.round(filtered.reduce((total,i)=>total+i.cost,0) / filtered.length) : 0,
@@ -259,18 +276,34 @@ function ItemDatabase({ items, setItems }: { items: AppItem[]; setItems: React.D
       <span>{filtered.length} entries</span>
     </div>
     <div className="databaseSummary">
-      <span>Official <b>{summary.official}</b></span><span>Weapons <b>{summary.weapons}</b></span><span>Armor <b>{summary.armor}</b></span><span>Shields <b>{summary.shields}</b></span><span>Accessories <b>{summary.accessories}</b></span><span>Martial <b>{summary.martial}</b></span><span>Materials <b>{summary.materials}</b></span><span>Avg Cost <b>{summary.averageCost}z</b></span>
+      <span>Official <b>{summary.official}</b></span><span>Custom <b>{summary.custom}</b></span><span>Weapons <b>{summary.weapons}</b></span><span>Armor <b>{summary.armor}</b></span><span>Shields <b>{summary.shields}</b></span><span>Accessories <b>{summary.accessories}</b></span><span>Martial <b>{summary.martial}</b></span><span>Materials <b>{summary.materials}</b></span><span>Avg Cost <b>{summary.averageCost}z</b></span>
     </div>
-    {filtered.length===0 ? <Empty text="No matching items saved yet. Generate one to start your database."/> : <div className="grid">{filtered.map(item=><ItemCard key={item.id} item={item} onDelete={()=>setItems(prev=>prev.filter(x=>x.id!==item.id))} />)}</div>}
+    {filtered.length===0 ? <Empty text="No matching items saved yet. Generate one to start your database."/> : <div className="grid">{filtered.map(item=><ItemCard
+      key={item.id}
+      item={item}
+      database
+      onDelete={item.source === 'Official' ? undefined : () => {
+        if (!window.confirm(`Delete “${item.name}”? This cannot be undone unless you have a backup.`)) return
+        setItems(prev=>prev.filter(x=>x.id!==item.id))
+      }}
+    />)}</div>}
   </section>
 }
 
-function ItemCard({ item, onDelete }: { item: AppItem; onDelete?:()=>void }) {
+function ItemCard({ item, onDelete, database = false }: { item: AppItem; onDelete?:()=>void; database?: boolean }) {
   const librarySource = itemLibrarySource(item)
-  return <article className="card itemCard" key={item.id}>
+  return <article
+    className="card itemCard"
+    data-db-record-id={database ? item.id : undefined}
+    data-db-record-kind={database ? 'item' : undefined}
+    key={item.id}
+  >
     <div className="cardTitle">
       <div><span className="source">{item.source}{item.source === 'Official' ? ` · ${librarySource}` : ''}</span><h2>{item.name}</h2></div>
-      {onDelete && <button className="danger" onClick={onDelete}>Delete</button>}
+      {database && <div className="cardActions">
+        <button type="button" className="dbOpenButton" data-db-open="item" data-db-record-id={item.id}>Open / Edit</button>
+        {onDelete && <button className="danger" onClick={onDelete}>Delete</button>}
+      </div>}
     </div>
     <div className="itemMeta"><span>{item.type}</span>{item.category && <span>{item.category}</span>}<span>{item.cost}z</span>{item.martial && <span>Martial</span>}{item.material && <span>Material</span>}</div>
     {item.baseItem && <p><strong>Base:</strong> {item.baseItem}</p>}
