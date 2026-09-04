@@ -19,6 +19,7 @@ const SETTINGS_KEYS = [
   'fu-db-favorites-only',
   'fu-db-pagination',
   'fu-db-saved-views',
+  'fu-db-saved-views-native',
   'fu-db-selection',
   'fu-db-recent',
   'fu-db-recent-native',
