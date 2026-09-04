@@ -1,0 +1,6 @@
+.dbTaxonomyBar { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:-2px 0 12px; padding:9px 10px; border:1px solid #334155; border-radius:12px; background:rgba(8,15,29,.46); color:#94a3b8; font-size:.84rem; }
+.dbTaxonomyBar label { display:flex; align-items:center; gap:8px; color:#cbd5e1; font-weight:700; }
+.dbTaxonomyBar select { width:auto; min-width:170px; padding:7px 9px; }
+.dbCatalogBadge { border-color:#4f46e5 !important; color:#c7d2fe !important; }
+.dbHiddenByTaxonomy { display:none !important; }
+@media (max-width:650px) { .dbTaxonomyBar { align-items:stretch; flex-direction:column; } .dbTaxonomyBar label { justify-content:space-between; } .dbTaxonomyBar select { min-width:0; flex:1; } }
