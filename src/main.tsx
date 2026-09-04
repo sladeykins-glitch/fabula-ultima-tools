@@ -9,6 +9,7 @@ import SavedViewsTools from './SavedViewsTools'
 import UndoDeleteTools from './UndoDeleteTools'
 import PwaTools from './PwaTools'
 import { ensureOfficialData } from './officialBootstrap'
+import { migrateInterfaceStorage } from './storageMigrations'
 import './styles.css'
 import './performance.css'
 import './nativePagination.css'
@@ -30,6 +31,11 @@ function renderApp() {
 }
 
 async function start() {
+  try {
+    migrateInterfaceStorage()
+  } catch (error) {
+    console.error('Could not migrate interface preferences.', error)
+  }
   try {
     await ensureOfficialData()
   } catch (error) {
