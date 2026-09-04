@@ -17,6 +17,20 @@ const librarySources: LibrarySource[] = ['All','Core Rulebook','High Fantasy','N
 const materialNatures: (MaterialNature|'Random')[] = ['Random','Animal','Fungal','Incorporeal','Liquid','Artificial','Mineral','Plant']
 const materialFunctions: (MaterialFunction|'Random')[] = ['Random','Agility and Precision','Damage and Power','Protection','Recovery','Sabotage','Support']
 
+const ACTIVE_TAB_KEY = 'fu-active-tab'
+const MONSTER_FILTERS_KEY = 'fu-monster-filters'
+const ITEM_FILTERS_KEY = 'fu-item-filters'
+const MONSTER_SEARCH_KEY = 'fu-monster-search'
+
+function readStored<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key)
+    return raw == null ? fallback : JSON.parse(raw) as T
+  } catch {
+    return fallback
+  }
+}
+
 function monsterLibrarySource(monster: Monster): Exclude<LibrarySource, 'All'> {
   if (monster.source !== 'Official') return 'Generated / Custom'
   if (monster.id.startsWith('official-high-')) return 'High Fantasy'
@@ -45,13 +59,18 @@ const combatTactics: Record<CombatStyle, string> = {
 }
 
 export default function App() {
-  const [tab, setTab] = useState<Tab>('Monster Database')
+  const [tab, setTab] = useState<Tab>(() => {
+    const saved = readStored<Tab>(ACTIVE_TAB_KEY, 'Monster Database')
+    return (['Monster Database','Monster Generator','Item Database','Item Generator'] as Tab[]).includes(saved) ? saved : 'Monster Database'
+  })
   const [monsters, setMonsters] = useState<Monster[]>(() => JSON.parse(localStorage.getItem('fu-monsters') || '[]'))
   const [items, setItems] = useState<AppItem[]>(() => JSON.parse(localStorage.getItem('fu-items') || '[]'))
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(() => readStored<string>(MONSTER_SEARCH_KEY, ''))
 
   useEffect(() => localStorage.setItem('fu-monsters', JSON.stringify(monsters)), [monsters])
   useEffect(() => localStorage.setItem('fu-items', JSON.stringify(items)), [items])
+  useEffect(() => localStorage.setItem(ACTIVE_TAB_KEY, JSON.stringify(tab)), [tab])
+  useEffect(() => localStorage.setItem(MONSTER_SEARCH_KEY, JSON.stringify(search)), [search])
 
   return (
     <div className="shell">
@@ -115,11 +134,22 @@ function MonsterCard({ monster, onDelete, database = false }: { monster: Monster
 }
 
 function MonsterDatabase({ monsters, setMonsters, search, setSearch }: { monsters: Monster[]; setMonsters: React.Dispatch<React.SetStateAction<Monster[]>>; search: string; setSearch: (v:string)=>void }) {
-  const [rank, setRank] = useState<'All'|Rank>('All')
-  const [speciesFilter, setSpeciesFilter] = useState<'All'|Species>('All')
-  const [styleFilter, setStyleFilter] = useState<'All'|CombatStyle>('All')
-  const [sourceFilter, setSourceFilter] = useState<LibrarySource>('All')
-  const [sort, setSort] = useState<MonsterSort>('Newest')
+  const initialFilters = useMemo(() => readStored(MONSTER_FILTERS_KEY, {
+    rank: 'All' as 'All'|Rank,
+    speciesFilter: 'All' as 'All'|Species,
+    styleFilter: 'All' as 'All'|CombatStyle,
+    sourceFilter: 'All' as LibrarySource,
+    sort: 'Newest' as MonsterSort,
+  }), [])
+  const [rank, setRank] = useState<'All'|Rank>(initialFilters.rank)
+  const [speciesFilter, setSpeciesFilter] = useState<'All'|Species>(initialFilters.speciesFilter)
+  const [styleFilter, setStyleFilter] = useState<'All'|CombatStyle>(initialFilters.styleFilter)
+  const [sourceFilter, setSourceFilter] = useState<LibrarySource>(initialFilters.sourceFilter)
+  const [sort, setSort] = useState<MonsterSort>(initialFilters.sort)
+
+  useEffect(() => {
+    localStorage.setItem(MONSTER_FILTERS_KEY, JSON.stringify({ rank, speciesFilter, styleFilter, sourceFilter, sort }))
+  }, [rank, speciesFilter, styleFilter, sourceFilter, sort])
 
   const filtered = useMemo(() => {
     const matches = monsters.filter(m => {
@@ -212,13 +242,26 @@ function MonsterGenerator({ onSave }: { onSave: (m:Monster)=>void }) {
 }
 
 function ItemDatabase({ items, setItems }: { items: AppItem[]; setItems: React.Dispatch<React.SetStateAction<AppItem[]>> }) {
-  const [search, setSearch] = useState('')
-  const [type, setType] = useState<'All'|ItemType>('All')
-  const [category, setCategory] = useState('All')
-  const [sourceFilter, setSourceFilter] = useState<LibrarySource>('All')
-  const [martialFilter, setMartialFilter] = useState<'All'|'Martial'|'Non-martial'>('All')
-  const [materialFilter, setMaterialFilter] = useState<'All'|'With Material'|'No Material'>('All')
-  const [sort, setSort] = useState<ItemSort>('Newest')
+  const initialFilters = useMemo(() => readStored(ITEM_FILTERS_KEY, {
+    search: '',
+    type: 'All' as 'All'|ItemType,
+    category: 'All',
+    sourceFilter: 'All' as LibrarySource,
+    martialFilter: 'All' as 'All'|'Martial'|'Non-martial',
+    materialFilter: 'All' as 'All'|'With Material'|'No Material',
+    sort: 'Newest' as ItemSort,
+  }), [])
+  const [search, setSearch] = useState(initialFilters.search)
+  const [type, setType] = useState<'All'|ItemType>(initialFilters.type)
+  const [category, setCategory] = useState(initialFilters.category)
+  const [sourceFilter, setSourceFilter] = useState<LibrarySource>(initialFilters.sourceFilter)
+  const [martialFilter, setMartialFilter] = useState<'All'|'Martial'|'Non-martial'>(initialFilters.martialFilter)
+  const [materialFilter, setMaterialFilter] = useState<'All'|'With Material'|'No Material'>(initialFilters.materialFilter)
+  const [sort, setSort] = useState<ItemSort>(initialFilters.sort)
+
+  useEffect(() => {
+    localStorage.setItem(ITEM_FILTERS_KEY, JSON.stringify({ search, type, category, sourceFilter, martialFilter, materialFilter, sort }))
+  }, [search, type, category, sourceFilter, martialFilter, materialFilter, sort])
 
   const categories = useMemo(() => Array.from(new Set(items.map(i=>i.category).filter((value): value is string => !!value))).sort(), [items])
 
