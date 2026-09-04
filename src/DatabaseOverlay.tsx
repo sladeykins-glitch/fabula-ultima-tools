@@ -22,42 +22,6 @@ function saveRecords(kind: Kind, records: any[]) {
   localStorage.setItem(kind === 'monster' ? 'fu-monsters' : 'fu-items', JSON.stringify(records))
 }
 
-function recordScore(kind: Kind, record: any, card: HTMLElement) {
-  let score = 0
-  const source = card.querySelector('.source')?.textContent?.toLowerCase() || ''
-  const meta = kind === 'monster'
-    ? card.querySelector('.muted')?.textContent?.toLowerCase() || ''
-    : card.querySelector('.itemMeta')?.textContent?.toLowerCase() || ''
-
-  if (record.source && source.includes(String(record.source).toLowerCase())) score += 8
-  if (kind === 'monster') {
-    if (meta.includes(`lv ${record.level}`.toLowerCase())) score += 4
-    if (record.rank && meta.includes(String(record.rank).toLowerCase())) score += 3
-    if (record.species && meta.includes(String(record.species).toLowerCase())) score += 3
-    if (record.combatStyle && meta.includes(String(record.combatStyle).toLowerCase())) score += 2
-  } else {
-    if (record.type && meta.includes(String(record.type).toLowerCase())) score += 4
-    if (record.category && meta.includes(String(record.category).toLowerCase())) score += 3
-    if (typeof record.cost === 'number' && meta.includes(`${record.cost}z`)) score += 3
-    if (record.martial && meta.includes('martial')) score += 1
-  }
-  return score
-}
-
-function resolveRecord(kind: Kind, card: HTMLElement) {
-  const explicitId = card.dataset.dbRecordId
-  const records = loadRecords(kind)
-  if (explicitId) {
-    const exact = records.find(entry => entry.id === explicitId)
-    if (exact) return exact
-  }
-  const name = card.querySelector('h2')?.textContent?.trim()
-  if (!name) return null
-  const candidates = records.filter(entry => entry.name === name)
-  if (candidates.length <= 1) return candidates[0] || null
-  return [...candidates].sort((a, b) => recordScore(kind, b, card) - recordScore(kind, a, card))[0] || null
-}
-
 function prepareDraft(kind: Kind, record: any) {
   const copy = JSON.parse(JSON.stringify(record))
   if (kind === 'monster') {
@@ -76,34 +40,6 @@ export default function DatabaseOverlay() {
   const [draft, setDraft] = useState<any>(null)
 
   useEffect(() => {
-    const decorate = () => {
-      document.querySelectorAll<HTMLElement>('main > section').forEach(section => {
-        if (!section.querySelector('.databaseSummary')) return
-        section.querySelectorAll<HTMLElement>('.monsterCard, .itemCard').forEach(card => {
-          const kind: Kind = card.classList.contains('monsterCard') ? 'monster' : 'item'
-          const record = resolveRecord(kind, card)
-          if (!record) return
-          card.dataset.dbRecordId = record.id
-          const title = card.querySelector<HTMLElement>('.cardTitle')
-          if (!title) return
-          let button = title.querySelector<HTMLButtonElement>('.dbOpenButton')
-          if (!button) {
-            button = document.createElement('button')
-            button.type = 'button'
-            button.className = 'dbOpenButton'
-            button.textContent = 'Open / Edit'
-            title.appendChild(button)
-          }
-          button.dataset.dbOpen = kind
-          button.dataset.dbRecordId = record.id
-        })
-      })
-    }
-
-    decorate()
-    const observer = new MutationObserver(decorate)
-    observer.observe(document.body, { childList: true, subtree: true })
-
     const onClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement
       const button = target.closest<HTMLElement>('[data-db-open]')
@@ -112,17 +48,15 @@ export default function DatabaseOverlay() {
       event.stopPropagation()
       const kind = button.dataset.dbOpen as Kind
       const recordId = button.dataset.dbRecordId
-      const record = recordId ? loadRecords(kind).find(entry => entry.id === recordId) : null
+      if ((kind !== 'monster' && kind !== 'item') || !recordId) return
+      const record = loadRecords(kind).find(entry => entry.id === recordId)
       if (!record) return
       setSelected({ kind, record })
       setDraft(prepareDraft(kind, record))
     }
 
     document.addEventListener('click', onClick)
-    return () => {
-      observer.disconnect()
-      document.removeEventListener('click', onClick)
-    }
+    return () => document.removeEventListener('click', onClick)
   }, [])
 
   useEffect(() => {
