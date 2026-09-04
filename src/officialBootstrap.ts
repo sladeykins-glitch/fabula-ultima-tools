@@ -38,18 +38,22 @@ function officialLibraryReady() {
 }
 
 async function applyCorrections() {
-  const [monsterModule, itemModule, atlasItemModule, deepAuditModule, technoModule] = await Promise.all([
+  const [monsterModule, itemModule, atlasItemModule, deepAuditModule, technoModule, highFantasyAffinityModule] = await Promise.all([
     import('./officialSourceCorrections'),
     import('./officialItemSourceCorrections'),
     import('./officialAtlasItemSourceCorrections'),
     import('./officialDeepAuditCorrections'),
     import('./officialTechnoModuleDeepCorrections'),
+    import('./officialHighFantasyAffinityCorrections'),
   ])
   monsterModule.applyOfficialSourceCorrections()
   itemModule.applyOfficialItemSourceCorrections()
   atlasItemModule.applyOfficialAtlasItemSourceCorrections()
   deepAuditModule.applyOfficialDeepAuditCorrections()
   technoModule.applyOfficialTechnoModuleDeepCorrections()
+  // Run this after the older deep-audit layer because it corrects a few
+  // affinity interpretations discovered during direct rendered-page review.
+  highFantasyAffinityModule.applyOfficialHighFantasyAffinityCorrections()
 }
 
 export async function ensureOfficialData() {
