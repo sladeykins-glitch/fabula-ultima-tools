@@ -17,6 +17,7 @@ const SETTINGS_KEYS = [
   'fu-db-favorites',
   'fu-db-view-modes',
   'fu-db-view-modes-native',
+  'fu-db-page-size',
   'fu-db-favorites-only',
   'fu-db-pagination',
   'fu-db-saved-views',
