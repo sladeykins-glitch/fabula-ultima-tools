@@ -53,11 +53,7 @@ function readSettings() {
   for (const key of SETTINGS_KEYS) {
     const raw = localStorage.getItem(key)
     if (raw == null) continue
-    try {
-      settings[key] = JSON.parse(raw)
-    } catch {
-      settings[key] = raw
-    }
+    try { settings[key] = JSON.parse(raw) } catch { settings[key] = raw }
   }
   return settings
 }
@@ -92,12 +88,7 @@ export default function SiteBackupTools() {
   const fileInput = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    const update = () => setTarget(document.querySelector<HTMLElement>('.shell > header'))
-    update()
-    if (document.querySelector('.shell > header')) return
-    const observer = new MutationObserver(update)
-    observer.observe(document.body, { childList: true, subtree: true })
-    return () => observer.disconnect()
+    setTarget(document.querySelector<HTMLElement>('.shell > header'))
   }, [])
 
   if (!target) return null
@@ -107,10 +98,7 @@ export default function SiteBackupTools() {
       format: 'fabula-ultima-tools-site-backup',
       version: 1,
       exportedAt: new Date().toISOString(),
-      records: {
-        monsters: customRecords('fu-monsters'),
-        items: customRecords('fu-items'),
-      },
+      records: { monsters: customRecords('fu-monsters'), items: customRecords('fu-items') },
       settings: readSettings(),
     }
     const stamp = new Date().toISOString().slice(0, 10)
@@ -129,8 +117,7 @@ export default function SiteBackupTools() {
       const items = mergeRecords('fu-items', payload.records.items)
       if (payload.settings && typeof payload.settings === 'object') {
         for (const key of SETTINGS_KEYS) {
-          if (!(key in payload.settings)) continue
-          localStorage.setItem(key, JSON.stringify(payload.settings[key]))
+          if (key in payload.settings) localStorage.setItem(key, JSON.stringify(payload.settings[key]))
         }
       }
       setMessage(`Restored ${monsters} custom monsters and ${items} custom items. Reloading…`)
