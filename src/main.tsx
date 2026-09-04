@@ -18,6 +18,7 @@ import DatabaseCompareTools from './DatabaseCompareTools'
 import DatabaseRecentTools from './DatabaseRecentTools'
 import DatabaseSelectionInsights from './DatabaseSelectionInsights'
 import DataMaintenanceTools from './DataMaintenanceTools'
+import CommandPalette from './CommandPalette'
 import './styles.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -40,5 +41,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <DatabaseRecentTools />
     <DatabaseSelectionInsights />
     <DataMaintenanceTools />
+    <CommandPalette />
   </React.StrictMode>,
 )
