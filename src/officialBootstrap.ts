@@ -1,4 +1,5 @@
 import { officialWeapons } from './officialData'
+import { officialMonsters } from './officialMonsters'
 
 function mergeOfficial<T extends { id: string }>(key: string, official: T[]) {
   try {
@@ -12,3 +13,4 @@ function mergeOfficial<T extends { id: string }>(key: string, official: T[]) {
 }
 
 mergeOfficial('fu-items', officialWeapons)
+mergeOfficial('fu-monsters', officialMonsters)
