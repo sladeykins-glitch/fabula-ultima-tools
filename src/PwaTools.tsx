@@ -1,51 +1,33 @@
 import { useEffect } from 'react'
-import './pwaTools.css'
+
+const RETIRED_KEY = 'fu-pwa-cache-retired-v2'
 
 export default function PwaTools() {
   useEffect(() => {
-    const base = import.meta.env.BASE_URL || '/'
-    if (!document.querySelector('link[rel="manifest"]')) {
-      const link = document.createElement('link')
-      link.rel = 'manifest'
-      link.href = `${base}manifest.webmanifest`
-      document.head.appendChild(link)
-    }
-    let theme = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
-    if (!theme) {
-      theme = document.createElement('meta')
-      theme.name = 'theme-color'
-      document.head.appendChild(theme)
-    }
-    theme.content = '#312e81'
+    if (sessionStorage.getItem(RETIRED_KEY) === 'done') return
 
-    let badge: HTMLElement | null = null
-    const showStatus = (text: string) => {
-      const header = document.querySelector<HTMLElement>('.shell > header')
-      if (!header) return
-      if (!badge) {
-        badge = document.createElement('span')
-        badge.className = 'pwaStatus'
-        header.appendChild(badge)
+    const retire = async () => {
+      try {
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations()
+          await Promise.all(registrations
+            .filter(registration => registration.scope.includes('/fabula-ultima-tools/'))
+            .map(registration => registration.unregister()))
+        }
+
+        if ('caches' in window) {
+          const keys = await caches.keys()
+          await Promise.all(keys
+            .filter(key => key.startsWith('fabula-ultima-tools-'))
+            .map(key => caches.delete(key)))
+        }
+      } finally {
+        sessionStorage.setItem(RETIRED_KEY, 'done')
       }
-      badge.textContent = text
-      badge.title = 'This app caches visited assets so it can keep working without a connection.'
     }
 
-    const updateOnline = () => showStatus(navigator.onLine ? 'Offline ready' : 'Offline')
-    window.addEventListener('online', updateOnline)
-    window.addEventListener('offline', updateOnline)
-
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register(`${base}sw.js`, { scope: base })
-        .then(() => updateOnline())
-        .catch(() => undefined)
-    }
-
-    return () => {
-      window.removeEventListener('online', updateOnline)
-      window.removeEventListener('offline', updateOnline)
-      badge?.remove()
-    }
+    void retire()
   }, [])
+
   return null
 }
