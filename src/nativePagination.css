@@ -1,0 +1,37 @@
+.nativePagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 16px 0 18px;
+  padding: 10px 12px;
+  border: 1px solid var(--border, #2b3a55);
+  border-radius: 12px;
+  background: rgba(8, 16, 31, 0.45);
+}
+
+.nativePagination button {
+  min-width: 96px;
+}
+
+.nativePagination button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.nativePagination span {
+  min-width: 110px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .nativePagination {
+    gap: 8px;
+  }
+
+  .nativePagination button {
+    min-width: 0;
+    flex: 1;
+  }
+}
