@@ -1,6 +1,8 @@
 name: Apply Aestra Mode
 on:
-  workflow_dispatch:
+  push:
+    paths:
+      - scripts/apply-aestra-mode.py
 permissions:
   contents: write
 jobs:
