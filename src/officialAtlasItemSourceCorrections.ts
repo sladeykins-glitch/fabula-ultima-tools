@@ -90,6 +90,48 @@ const sourceRefs: Record<string, SourceRef> = {
   'official-tf-warp-cannon': { book:'Atlas: Techno Fantasy', page:87 },
 }
 
+// Mechanical corrections discovered during the line-by-line source audit.
+// Kept here as well as in the seed data so existing browsers receive fixes on reload.
+const patches: Record<string, Record<string, unknown>> = {
+  'official-nf-memorialis': {
+    effect:'When you use the Ripples Skill, recover 5 MP.',
+  },
+  'official-nf-giant-fork': {
+    effect:'When you use this weapon with the Knife and Fork Skill, you may add the High Roll to the attack’s damage; you do not have to treat it as being equal to 0.',
+  },
+  'official-nf-noble-dress': {
+    effect:'When an ally you can see causes you to recover HP, if you are in Crisis, that ally recovers 5 MP.',
+  },
+  'official-nf-lily-vambrace': {
+    effect:'If you have the Battle Gardening Skill, you can use it when you plant a magiseed with the Graft Skill.',
+  },
+  'official-nf-spicy-powder': {
+    effect:'When you deal damage using a delicacy or potion, you may change its type to fire. This effect may change the damage type dealt by the Expiration Date Skill.',
+  },
+  'official-tf-biocloak': {
+    effect:'When you use a Skill that requires you to spend HP, such as Ecdysis or Vismagus, you halve that cost.',
+  },
+  'official-tf-icebreaker': {
+    martial:true,
+    magicDefense:'+2',
+  },
+  'official-tf-medikit': {
+    effect:'When you cause one or more creatures to recover HP with a potion or spell, if at least one of those creatures is in Crisis, each of them recovers 5 additional HP.',
+  },
+  'official-tf-vanguard-pike': {
+    effect:'This weapon deals 5 extra damage during the first round of each conflict. A personal vehicle with this module enabled cannot have any other weapon module enabled.',
+  },
+  'official-tf-arbalest-mk-ii': {
+    effect:'This weapon deals 5 extra damage to flying creatures or creatures who are in midair. A personal vehicle with this module enabled cannot have any other weapon module enabled.',
+  },
+  'official-tf-reactive-deflector': {
+    effect:'As long as you are driving your personal vehicle and have a Counterstrike support module enabled, you can apply its effects even when a character aboard your personal vehicle is hit by a melee attack rather than only ranged attacks. This module has all the effects of a Shield module.',
+  },
+  'official-tf-morphshield': {
+    effect:'At the start of your turn during a conflict, you can disable this module to enable a different disabled weapon module of your choice. If you do, at the end of your turn you must disable the chosen module and enable this one again. This module has all the effects of a Shield module.',
+  },
+}
+
 export function applyOfficialAtlasItemSourceCorrections() {
   try {
     const items = JSON.parse(localStorage.getItem('fu-items') || '[]')
@@ -97,13 +139,29 @@ export function applyOfficialAtlasItemSourceCorrections() {
     let changed = false
     const next = items.map((item: StoredItem) => {
       if (item?.source !== 'Official') return item
-      const ref = sourceRefs[String(item?.id || '')]
-      if (!ref) return item
-      const sourceNote = `Source audit: ${ref.book}, printed page ${ref.page}.`
-      const breakdown = Array.isArray(item.breakdown) ? item.breakdown : []
-      if (breakdown.includes(sourceNote)) return item
-      changed = true
-      return { ...item, breakdown:[...breakdown, sourceNote] }
+      const id = String(item?.id || '')
+      const ref = sourceRefs[id]
+      const patch = patches[id]
+      if (!ref && !patch) return item
+
+      let updated = item
+      if (patch) {
+        const patched = { ...updated, ...patch }
+        if (JSON.stringify(patched) !== JSON.stringify(updated)) {
+          updated = patched
+          changed = true
+        }
+      }
+
+      if (ref) {
+        const sourceNote = `Source audit: ${ref.book}, printed page ${ref.page}.`
+        const breakdown = Array.isArray(updated.breakdown) ? updated.breakdown : []
+        if (!breakdown.includes(sourceNote)) {
+          updated = { ...updated, breakdown:[...breakdown, sourceNote] }
+          changed = true
+        }
+      }
+      return updated
     })
     if (changed) localStorage.setItem('fu-items', JSON.stringify(next))
   } catch {
