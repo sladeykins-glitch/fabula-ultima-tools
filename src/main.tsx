@@ -20,6 +20,12 @@ import DatabaseSelectionInsights from './DatabaseSelectionInsights'
 import DataMaintenanceTools from './DataMaintenanceTools'
 import CommandPalette from './CommandPalette'
 import DatabaseCardCopyTools from './DatabaseCardCopyTools'
+import DatabaseCreateTools from './DatabaseCreateTools'
+import AdvancedSearchTools from './AdvancedSearchTools'
+import ItemTaxonomyTools from './ItemTaxonomyTools'
+import DatabaseToolPanel from './DatabaseToolPanel'
+import PwaTools from './PwaTools'
+import OfficialDataAuditTools from './OfficialDataAuditTools'
 import './styles.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -44,5 +50,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <DataMaintenanceTools />
     <CommandPalette />
     <DatabaseCardCopyTools />
+    <DatabaseCreateTools />
+    <AdvancedSearchTools />
+    <ItemTaxonomyTools />
+    <DatabaseToolPanel />
+    <PwaTools />
+    <OfficialDataAuditTools />
   </React.StrictMode>,
 )
