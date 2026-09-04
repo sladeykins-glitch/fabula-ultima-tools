@@ -1,5 +1,7 @@
 from pathlib import Path
 
+# One-shot migration: generate several complete candidates, score them with the
+# existing structural validators, and keep the strongest result automatically.
 p=Path('src/App.tsx')
 s=p.read_text()
 
