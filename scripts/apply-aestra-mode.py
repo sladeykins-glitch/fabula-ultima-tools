@@ -1,3 +1,4 @@
+# One-shot migration: wire canonical Aestra generation controls into App.tsx
 from pathlib import Path
 p=Path('src/App.tsx')
 s=p.read_text()
