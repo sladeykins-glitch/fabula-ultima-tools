@@ -32,7 +32,10 @@ const corrections: Record<string, Correction> = {
     patch: { magicDefense: 8 },
     note: 'Source audit: Atlas: High Fantasy, printed page 181. M. DEF is INS d6 +2 = 8; HP is Special and uses MP as the health track.',
   },
-  'official-high-spectral-servant': { note: 'Source audit: Atlas: High Fantasy, printed page 182.' },
+  'official-high-spectral-servant': {
+    patch: { defense: 11 },
+    note: 'Source audit: Atlas: High Fantasy, printed page 182. DEF is DEX d10 +1 = 11.',
+  },
   'official-high-maximilian-prince': { note: 'Source audit: Atlas: High Fantasy, printed page 186.' },
   'official-high-maximilian-bastion': { note: 'Source audit: Atlas: High Fantasy, printed page 187.' },
   'official-high-nike': { note: 'Source audit: Atlas: High Fantasy, printed page 188.' },
@@ -41,17 +44,20 @@ const corrections: Record<string, Correction> = {
     note: 'Source audit: Atlas: High Fantasy, printed page 189. M. DEF is INS d10 +2 = 12.',
   },
   'official-high-mimesis': {
-    patch: { magicDefense: 12 },
-    note: 'Source audit: Atlas: High Fantasy, printed page 192. M. DEF is INS d10 +2 = 12.',
+    patch: { magicDefense: 12, levelDamageBonus: 15 },
+    note: 'Source audit: Atlas: High Fantasy, printed page 192. M. DEF is INS d10 +2 = 12; level 60 NPCs use the +15 level damage bonus.',
   },
   'official-high-anagnorisis': {
-    patch: { magicDefense: 12 },
-    note: 'Source audit: Atlas: High Fantasy, printed page 194. M. DEF is INS d10 +2 = 12.',
+    patch: { magicDefense: 12, levelDamageBonus: 15 },
+    note: 'Source audit: Atlas: High Fantasy, printed page 194. M. DEF is INS d10 +2 = 12; level 60 NPCs use the +15 level damage bonus.',
   },
-  'official-high-dramatists-quill': { note: 'Source audit: Atlas: High Fantasy, printed page 195.' },
+  'official-high-dramatists-quill': {
+    patch: { levelDamageBonus: 15 },
+    note: 'Source audit: Atlas: High Fantasy, printed page 195. Level 60 NPCs use the +15 level damage bonus.',
+  },
   'official-high-catharsis': {
-    patch: { magicDefense: 14 },
-    note: 'Source audit: Atlas: High Fantasy, printed page 196. M. DEF is INS d12 +2 = 14.',
+    patch: { magicDefense: 14, levelDamageBonus: 15 },
+    note: 'Source audit: Atlas: High Fantasy, printed page 196. M. DEF is INS d12 +2 = 14; level 60 NPCs use the +15 level damage bonus.',
   },
 }
 
