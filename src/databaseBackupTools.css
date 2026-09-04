@@ -1,0 +1,9 @@
+.dbBackupTools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; width: 100%; padding-top: 2px; }
+.dbBackupTools button { border: 1px solid #334155; background: #111827; color: #e5e7eb; border-radius: 10px; padding: 8px 10px; }
+.dbBackupTools button:hover { border-color: #818cf8; }
+.dbBackupCount { color: #94a3b8; font-size: .86rem; margin-right: 2px; }
+.dbBackupCount b { color: #e5e7eb; }
+.dbResetButton { color: #fda4af !important; border-color: #4c2b36 !important; }
+.dbBackupFile { display: none; }
+.dbBackupMessage { flex: 1 1 220px; color: #c7d2fe; font-size: .84rem; }
+@media (max-width: 760px) { .dbBackupTools { align-items: stretch; } .dbBackupTools button { flex: 1 1 140px; } .dbBackupCount, .dbBackupMessage { flex-basis: 100%; } }
