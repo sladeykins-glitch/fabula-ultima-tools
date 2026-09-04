@@ -5,7 +5,6 @@ type Kind = 'monster' | 'item'
 type PageSize = 12 | 24 | 48 | 'all'
 
 const PAGE_KEY = 'fu-db-pagination'
-
 type PaginationState = Record<Kind, { page: number; pageSize: PageSize }>
 
 function readState(): PaginationState {
@@ -25,14 +24,19 @@ function writeState(state: PaginationState) {
 }
 
 function databaseKind(section: HTMLElement): Kind | null {
-  if (section.querySelector('.monsterCard')) return 'monster'
-  if (section.querySelector('.itemCard')) return 'item'
+  if (section.querySelector('input[placeholder^="Search monsters"]') || section.querySelector('.monsterCard')) return 'monster'
+  if (section.querySelector('input[placeholder^="Search items"]') || section.querySelector('.itemCard')) return 'item'
   return null
 }
 
+function isFilteredOut(card: HTMLElement) {
+  return card.classList.contains('dbHiddenByFavorite')
+    || card.classList.contains('dbHiddenByAdvanced')
+    || card.classList.contains('dbHiddenByTaxonomy')
+}
+
 function eligibleCards(section: HTMLElement) {
-  return Array.from(section.querySelectorAll<HTMLElement>('.monsterCard, .itemCard'))
-    .filter(card => !card.classList.contains('dbHiddenByFavorite'))
+  return Array.from(section.querySelectorAll<HTMLElement>('.monsterCard, .itemCard')).filter(card => !isFilteredOut(card))
 }
 
 function cardSignature(kind: Kind, card: HTMLElement) {
@@ -49,7 +53,7 @@ export default function DatabasePaginationTools() {
   useEffect(() => {
     let applying = false
     let scheduled = false
-    let lastSignatures: Record<Kind, string> = { monster: '', item: '' }
+    const lastSignatures: Record<Kind, string> = { monster: '', item: '' }
 
     const apply = (resetChanged = false) => {
       if (applying) return
@@ -62,6 +66,7 @@ export default function DatabasePaginationTools() {
         if (!kind) return
 
         const cards = eligibleCards(section)
+        const eligibleSet = new Set(cards)
         const signature = cards.map(card => cardSignature(kind, card)).join('|')
         if (resetChanged && lastSignatures[kind] && signature !== lastSignatures[kind]) state[kind].page = 1
         lastSignatures[kind] = signature
@@ -73,8 +78,16 @@ export default function DatabasePaginationTools() {
         const start = pageSize === 'all' ? 0 : (page - 1) * pageSize
         const end = pageSize === 'all' ? cards.length : start + pageSize
 
-        section.querySelectorAll<HTMLElement>('.monsterCard, .itemCard').forEach(card => card.classList.remove('dbHiddenByPage'))
-        cards.forEach((card, index) => card.classList.toggle('dbHiddenByPage', index < start || index >= end))
+        let eligibleIndex = 0
+        section.querySelectorAll<HTMLElement>('.monsterCard, .itemCard').forEach(card => {
+          if (!eligibleSet.has(card)) {
+            card.classList.toggle('dbHiddenByPage', false)
+            return
+          }
+          const shouldHide = eligibleIndex < start || eligibleIndex >= end
+          card.classList.toggle('dbHiddenByPage', shouldHide)
+          eligibleIndex += 1
+        })
 
         let bar = section.querySelector<HTMLElement>('.dbPaginationBar')
         if (!bar) {
@@ -82,7 +95,7 @@ export default function DatabasePaginationTools() {
           bar.className = 'dbPaginationBar'
           bar.dataset.dbPaginationKind = kind
           const grid = section.querySelector('.grid')
-          grid?.insertAdjacentElement('afterend', bar)
+          ;(grid || section.querySelector('.databaseSummary'))?.insertAdjacentElement('afterend', bar)
         }
         if (!bar) return
 
