@@ -22,21 +22,81 @@ function saveRecords(kind: Kind, records: any[]) {
   localStorage.setItem(kind === 'monster' ? 'fu-monsters' : 'fu-items', JSON.stringify(records))
 }
 
+function recordScore(kind: Kind, record: any, card: HTMLElement) {
+  let score = 0
+  const source = card.querySelector('.source')?.textContent?.toLowerCase() || ''
+  const meta = kind === 'monster'
+    ? card.querySelector('.muted')?.textContent?.toLowerCase() || ''
+    : card.querySelector('.itemMeta')?.textContent?.toLowerCase() || ''
+
+  if (record.source && source.includes(String(record.source).toLowerCase())) score += 8
+  if (kind === 'monster') {
+    if (meta.includes(`lv ${record.level}`.toLowerCase())) score += 4
+    if (record.rank && meta.includes(String(record.rank).toLowerCase())) score += 3
+    if (record.species && meta.includes(String(record.species).toLowerCase())) score += 3
+    if (record.combatStyle && meta.includes(String(record.combatStyle).toLowerCase())) score += 2
+  } else {
+    if (record.type && meta.includes(String(record.type).toLowerCase())) score += 4
+    if (record.category && meta.includes(String(record.category).toLowerCase())) score += 3
+    if (typeof record.cost === 'number' && meta.includes(`${record.cost}z`)) score += 3
+    if (record.martial && meta.includes('martial')) score += 1
+  }
+  return score
+}
+
+function resolveRecord(kind: Kind, card: HTMLElement) {
+  const explicitId = card.dataset.dbRecordId
+  const records = loadRecords(kind)
+  if (explicitId) {
+    const exact = records.find(entry => entry.id === explicitId)
+    if (exact) return exact
+  }
+  const name = card.querySelector('h2')?.textContent?.trim()
+  if (!name) return null
+  const candidates = records.filter(entry => entry.name === name)
+  if (candidates.length <= 1) return candidates[0] || null
+  return [...candidates].sort((a, b) => recordScore(kind, b, card) - recordScore(kind, a, card))[0] || null
+}
+
+function prepareDraft(kind: Kind, record: any) {
+  const copy = JSON.parse(JSON.stringify(record))
+  if (kind === 'monster') {
+    copy.traitsText = Array.isArray(record.traits) ? record.traits.join(', ') : ''
+    copy.attributes ||= { dex: 8, ins: 8, mig: 8, wlp: 8 }
+    copy.affinities ||= Object.fromEntries(damageTypes.map(type => [type, 'Normal']))
+    copy.attacks ||= []
+    copy.skills ||= []
+    copy.spells ||= []
+  }
+  return copy
+}
+
 export default function DatabaseOverlay() {
   const [selected, setSelected] = useState<Selected>(null)
   const [draft, setDraft] = useState<any>(null)
 
   useEffect(() => {
     const decorate = () => {
-      document.querySelectorAll<HTMLElement>('.monsterCard, .itemCard').forEach(card => {
-        const title = card.querySelector<HTMLElement>('.cardTitle')
-        if (!title || title.querySelector('.dbOpenButton')) return
-        const button = document.createElement('button')
-        button.type = 'button'
-        button.className = 'dbOpenButton'
-        button.textContent = 'Open / Edit'
-        button.dataset.dbOpen = card.classList.contains('monsterCard') ? 'monster' : 'item'
-        title.appendChild(button)
+      document.querySelectorAll<HTMLElement>('main > section').forEach(section => {
+        if (!section.querySelector('.databaseSummary')) return
+        section.querySelectorAll<HTMLElement>('.monsterCard, .itemCard').forEach(card => {
+          const kind: Kind = card.classList.contains('monsterCard') ? 'monster' : 'item'
+          const record = resolveRecord(kind, card)
+          if (!record) return
+          card.dataset.dbRecordId = record.id
+          const title = card.querySelector<HTMLElement>('.cardTitle')
+          if (!title) return
+          let button = title.querySelector<HTMLButtonElement>('.dbOpenButton')
+          if (!button) {
+            button = document.createElement('button')
+            button.type = 'button'
+            button.className = 'dbOpenButton'
+            button.textContent = 'Open / Edit'
+            title.appendChild(button)
+          }
+          button.dataset.dbOpen = kind
+          button.dataset.dbRecordId = record.id
+        })
       })
     }
 
@@ -51,22 +111,11 @@ export default function DatabaseOverlay() {
       event.preventDefault()
       event.stopPropagation()
       const kind = button.dataset.dbOpen as Kind
-      const card = button.closest<HTMLElement>(kind === 'monster' ? '.monsterCard' : '.itemCard')
-      const name = card?.querySelector('h2')?.textContent?.trim()
-      if (!name) return
-      const record = loadRecords(kind).find(entry => entry.name === name)
+      const recordId = button.dataset.dbRecordId
+      const record = recordId ? loadRecords(kind).find(entry => entry.id === recordId) : null
       if (!record) return
-      const copy = JSON.parse(JSON.stringify(record))
-      if (kind === 'monster') {
-        copy.traitsText = Array.isArray(record.traits) ? record.traits.join(', ') : ''
-        copy.attributes ||= { dex: 8, ins: 8, mig: 8, wlp: 8 }
-        copy.affinities ||= Object.fromEntries(damageTypes.map(type => [type, 'Normal']))
-        copy.attacks ||= []
-        copy.skills ||= []
-        copy.spells ||= []
-      }
       setSelected({ kind, record })
-      setDraft(copy)
+      setDraft(prepareDraft(kind, record))
     }
 
     document.addEventListener('click', onClick)
@@ -100,15 +149,19 @@ export default function DatabaseOverlay() {
   const addSkill = () => set('skills', [...(draft.skills || []), { name: 'New Skill', summary: '' }])
   const addSpell = () => set('spells', [...(draft.spells || []), { name: 'New Spell', mp: '10', target: 'One creature', duration: 'Instantaneous', effect: '' }])
 
-  const save = () => {
-    const records = loadRecords(selected.kind)
-    let next = { ...draft }
+  const finalizedDraft = () => {
+    const next = { ...draft }
     delete next.traitsText
     if (selected.kind === 'monster') {
       next.traits = String(draft.traitsText || '').split(',').map((value: string) => value.trim()).filter(Boolean)
       next.crisis = Math.floor((Number(next.hp) || 0) / 2)
     }
+    return next
+  }
 
+  const save = () => {
+    const records = loadRecords(selected.kind)
+    let next = finalizedDraft()
     if (isOfficial) {
       next = {
         ...next,
@@ -120,6 +173,25 @@ export default function DatabaseOverlay() {
     } else {
       saveRecords(selected.kind, records.map(entry => entry.id === selected.record.id ? next : entry))
     }
+    window.location.reload()
+  }
+
+  const duplicate = () => {
+    const records = loadRecords(selected.kind)
+    const copy = {
+      ...finalizedDraft(),
+      id: `custom-copy-${Date.now()}`,
+      source: 'Custom',
+      name: `${draft.name || selected.record.name} — Copy`,
+    }
+    saveRecords(selected.kind, [copy, ...records])
+    window.location.reload()
+  }
+
+  const remove = () => {
+    if (isOfficial) return
+    if (!window.confirm(`Delete “${selected.record.name}”? This cannot be undone unless you have a backup.`)) return
+    saveRecords(selected.kind, loadRecords(selected.kind).filter(entry => entry.id !== selected.record.id))
     window.location.reload()
   }
 
@@ -241,6 +313,8 @@ export default function DatabaseOverlay() {
       </details>
 
       <div className="dbModalActions">
+        {!isOfficial && <button className="danger" onClick={remove}>Delete</button>}
+        <button onClick={duplicate}>Duplicate</button>
         <button onClick={() => setSelected(null)}>Cancel</button>
         <button className="primary" onClick={save}>{isOfficial ? 'Save as Custom Copy' : 'Save Changes'}</button>
       </div>
