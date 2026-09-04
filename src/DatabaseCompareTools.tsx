@@ -38,6 +38,25 @@ export default function DatabaseCompareTools() {
   const [open, setOpen] = useState<OpenState>(null)
 
   useEffect(() => {
+    const decorate = () => {
+      document.querySelectorAll<HTMLElement>('.dbSelectionBar').forEach(bar => {
+        const kind = bar.dataset.dbSelectionKind as Kind | undefined
+        if (!kind) return
+        const count = readSelection(kind).length
+        let button = bar.querySelector<HTMLButtonElement>('[data-db-selection-compare]')
+        if (!button) {
+          button = document.createElement('button')
+          button.type = 'button'
+          button.dataset.dbSelectionCompare = 'true'
+          const clear = bar.querySelector('[data-db-selection-clear]')
+          bar.insertBefore(button, clear)
+        }
+        button.textContent = 'Compare selected'
+        button.disabled = count < 2
+        button.title = count < 2 ? 'Select at least two entries to compare them' : 'Compare selected entries side by side'
+      })
+    }
+
     const onClick = (event: MouseEvent) => {
       const button = (event.target as HTMLElement).closest<HTMLElement>('[data-db-selection-compare]')
       if (!button) return
@@ -48,8 +67,15 @@ export default function DatabaseCompareTools() {
       if (records.length < 2) return
       setOpen({ kind, records })
     }
+
+    decorate()
+    const observer = new MutationObserver(() => requestAnimationFrame(decorate))
+    observer.observe(document.body, { childList: true, subtree: true })
     document.addEventListener('click', onClick)
-    return () => document.removeEventListener('click', onClick)
+    return () => {
+      observer.disconnect()
+      document.removeEventListener('click', onClick)
+    }
   }, [])
 
   useEffect(() => {
