@@ -16,6 +16,14 @@ const corrections: Record<string, Correction> = {
   'official-core-grey-howler': { note: 'Source audit: Core Rulebook v1.02, printed page 325.' },
 
   // Atlas: High Fantasy — verified directly against the antagonist profiles.
+  'official-high-eileen': {
+    patch: { defense: 11 },
+    note: 'Source audit: Atlas: High Fantasy, printed page 170. Printed DEF is +3/+1: Defense 11 in starting Harpoon form and 9 in Revolver form; the app stores the starting Harpoon-form Defense.',
+  },
+  'official-high-salamander': { note: 'Source audit: Atlas: High Fantasy, printed page 171.' },
+  'official-high-cryomander': { note: 'Source audit: Atlas: High Fantasy, printed page 172.' },
+  'official-high-pirate': { note: 'Source audit: Atlas: High Fantasy, printed page 173.' },
+  'official-high-flame-dragon': { note: 'Source audit: Atlas: High Fantasy, printed page 176.' },
   'official-high-cerine': {
     patch: { affinities: { light: 'Resistant' } },
     note: 'Source audit: Atlas: High Fantasy, printed page 180. Holy cloak grants Resistance to fire and light damage.',
