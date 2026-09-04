@@ -1,7 +1,7 @@
 import type { Affinity, CombatStyle, DamageType, Monster, MonsterAttack, MonsterSkill, MonsterSpell, Rank, Species } from './rules'
 
 export type MonsterTheme = 'Wild' | 'Infernal' | 'Arcane' | 'Industrial' | 'Floral' | 'Spectral' | 'Draconic' | 'Aquatic'
-export type MonsterRerollPart = 'name' | 'attacks' | 'skills' | 'spells' | 'affinities' | 'theme'
+export type MonsterRerollPart = 'name' | 'traits' | 'attacks' | 'skills' | 'spells' | 'affinities' | 'theme'
 
 type ThemeProfile = {
   nouns: string[]
@@ -267,6 +267,7 @@ export function applyMonsterTheme(monster: Monster, requested?: MonsterTheme): M
 
 export function rerollMonsterPart(monster:Monster, part:MonsterRerollPart):Monster {
   const currentTheme=themeFromMonster(monster)
+  if(part==='traits') return {...monster,traits:unique(shuffled(profiles[currentTheme].traits).slice(0,2))}
   if(part==='theme') {
     const nextTheme=pickDifferent(monsterThemes,currentTheme)
     const {primary,status}=chooseGimmick(profiles[nextTheme],monster.combatStyle||'Mixed')

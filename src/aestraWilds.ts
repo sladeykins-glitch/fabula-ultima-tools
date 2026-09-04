@@ -1,4 +1,5 @@
-import type { Affinity, DamageType, Monster, MonsterAttack, MonsterSkill } from './rules'
+import type { Affinity, DamageType, Monster, MonsterAttack, MonsterSkill, Species } from './rules'
+import type { AestraInfluence } from './aestra'
 
 export type AestraEnvironment='Green Reaches'|'Scarlands'|'Ruin Belts'|'Frontier'|'Deep Wilds'
 export type AestraExposure='Borderlands'|'Wild'|'Remote'|'Uncharted'
@@ -69,12 +70,26 @@ export function aestraWildGenerationHint(environment:AestraEnvironment){
   'Frontier':['Mixed','Support','Assassin'],
   'Deep Wilds':['Controller','Assassin','Mixed'],
  }
- return {combatStyle:pick(styles[environment])}
+ const species:Record<AestraEnvironment,Species[]>={
+  'Green Reaches':['Plant','Beast','Monster'],
+  'Scarlands':['Elemental','Construct','Monster'],
+  'Ruin Belts':['Construct','Undead','Monster'],
+  'Frontier':['Humanoid','Beast','Construct'],
+  'Deep Wilds':['Monster','Beast','Elemental'],
+ }
+ return {combatStyle:pick(styles[environment]),species:pick(species[environment])}
 }
 
-export function refreshAestraWildAffinities(monster:Monster,environment:AestraEnvironment):Monster{
+export function refreshAestraWildAffinities(monster:Monster,environment:AestraEnvironment,influence:AestraInfluence='Stable'):Monster{
  const affinities={...monster.affinities}
  if(environment==='Green Reaches')affinities.earth=improve(affinities.earth)
  if(environment==='Ruin Belts')affinities.bolt=improve(affinities.bolt)
+ if(influence==='Corrupted'){affinities.dark=improve(affinities.dark);affinities.light=affinities.light==='Immune'?'Resistant':affinities.light==='Resistant'?'Normal':affinities.light==='Normal'?'Vulnerable':affinities.light}
  return {...monster,affinities}
+}
+
+export function refreshAestraWildTraits(monster:Monster,environment:AestraEnvironment):Monster{
+ const marker:Record<AestraEnvironment,string>={'Green Reaches':'overgrown','Scarlands':'war-scarred','Ruin Belts':'relic-touched','Frontier':'weathered','Deep Wilds':'unclassified'}
+ const regional=new Set(Object.values(marker))
+ return {...monster,traits:[marker[environment],...monster.traits.filter(t=>!regional.has(t))].slice(0,4)}
 }
