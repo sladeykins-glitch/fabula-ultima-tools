@@ -3,6 +3,7 @@ import { officialCoreRareWeapons } from './officialCoreRareWeapons'
 import { officialAtlasRareWeapons } from './officialAtlasRareWeapons'
 import { officialOtherItems } from './officialOtherItems'
 import { officialMonsters } from './officialMonsters'
+import { officialCoreBestiaryRemaining } from './officialCoreBestiaryRemaining'
 
 function mergeOfficial<T extends { id: string }>(key: string, official: T[]) {
   try {
@@ -16,4 +17,4 @@ function mergeOfficial<T extends { id: string }>(key: string, official: T[]) {
 }
 
 mergeOfficial('fu-items', [...officialWeapons, ...officialCoreRareWeapons, ...officialAtlasRareWeapons, ...officialOtherItems])
-mergeOfficial('fu-monsters', officialMonsters)
+mergeOfficial('fu-monsters', [...officialMonsters, ...officialCoreBestiaryRemaining])
