@@ -52,6 +52,12 @@ function visibleRecordIds(section: HTMLElement, kind: Kind) {
     .filter((id): id is string => !!id)
 }
 
+function refreshDom(section: HTMLElement) {
+  const marker = document.createComment('database-state-refresh')
+  section.appendChild(marker)
+  marker.remove()
+}
+
 function downloadJson(filename: string, data: unknown) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
@@ -208,6 +214,7 @@ export default function DatabaseSelectionTools() {
         favorites[kind] = Array.from(new Set([...favorites[kind], ...records.map(record => record.id)]))
         localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites))
         apply()
+        refreshDom(section)
         return
       }
 
