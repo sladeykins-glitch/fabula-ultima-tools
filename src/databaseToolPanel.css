@@ -1,0 +1,8 @@
+.dbToolPanel { margin:0 0 12px; border:1px solid #334155; border-radius:14px; background:rgba(8,15,29,.5); overflow:hidden; }
+.dbToolPanel > summary { display:flex; align-items:center; gap:10px; padding:10px 12px; color:#c7d2fe; cursor:pointer; user-select:none; }
+.dbToolPanel > summary span { font-weight:800; }
+.dbToolPanel > summary small { color:#94a3b8; font-weight:500; }
+.dbToolPanel[open] > summary { border-bottom:1px solid #263244; background:rgba(49,46,129,.12); }
+.dbToolPanelBody { display:grid; gap:8px; padding:10px; }
+.dbToolPanelBody > * { margin:0 !important; }
+@media (max-width:650px) { .dbToolPanel > summary { align-items:flex-start; flex-direction:column; gap:2px; } }
