@@ -6,6 +6,7 @@ import { GeneratedMaterial, generateMaterial, MaterialFunction, MaterialNature }
 
 type Tab = 'Monster Database' | 'Monster Generator' | 'Item Database' | 'Item Generator'
 type AppItem = GeneratedItem & { material?: GeneratedMaterial; origin?: string }
+type ItemSort = 'Newest' | 'Name' | 'Cost Low' | 'Cost High'
 
 const species: Species[] = ['Beast','Construct','Demon','Elemental','Humanoid','Monster','Plant','Undead']
 const ranks: Rank[] = ['Soldier','Elite','Champion']
@@ -140,31 +141,53 @@ function MonsterGenerator({ onSave }: { onSave: (m:Monster)=>void }) {
 function ItemDatabase({ items, setItems }: { items: AppItem[]; setItems: React.Dispatch<React.SetStateAction<AppItem[]>> }) {
   const [search, setSearch] = useState('')
   const [type, setType] = useState<'All'|ItemType>('All')
-  const filtered = useMemo(() => items.filter(item => {
-    const materialText = item.material ? `${item.material.name} ${item.material.nature} ${item.material.element || ''} ${item.material.function || ''}` : ''
-    const haystack = `${item.name} ${item.type} ${item.category || ''} ${item.baseItem || ''} ${item.quality || ''} ${item.effect} ${materialText} ${item.origin || ''}`.toLowerCase()
-    return haystack.includes(search.toLowerCase()) && (type === 'All' || item.type === type)
-  }), [items, search, type])
+  const [sort, setSort] = useState<ItemSort>('Newest')
+
+  const filtered = useMemo(() => {
+    const matches = items.filter(item => {
+      const materialText = item.material ? `${item.material.name} ${item.material.nature} ${item.material.element || ''} ${item.material.function || ''}` : ''
+      const haystack = `${item.name} ${item.type} ${item.category || ''} ${item.baseItem || ''} ${item.quality || ''} ${item.effect} ${materialText} ${item.origin || ''}`.toLowerCase()
+      return haystack.includes(search.toLowerCase()) && (type === 'All' || item.type === type)
+    })
+    if (sort === 'Name') return [...matches].sort((a,b)=>a.name.localeCompare(b.name))
+    if (sort === 'Cost Low') return [...matches].sort((a,b)=>a.cost-b.cost)
+    if (sort === 'Cost High') return [...matches].sort((a,b)=>b.cost-a.cost)
+    return matches
+  }, [items, search, type, sort])
+
+  const summary = useMemo(() => ({
+    weapons: filtered.filter(i=>i.type==='Weapon').length,
+    armor: filtered.filter(i=>i.type==='Armor').length,
+    shields: filtered.filter(i=>i.type==='Shield').length,
+    accessories: filtered.filter(i=>i.type==='Accessory').length,
+    materials: filtered.filter(i=>!!i.material).length,
+  }), [filtered])
 
   return <section>
-    <div className="toolbar">
+    <div className="toolbar itemToolbar">
       <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search items, qualities, materials, effects..." />
       <select className="compactSelect" value={type} onChange={e=>setType(e.target.value as 'All'|ItemType)}>
         <option>All</option><option>Weapon</option><option>Armor</option><option>Shield</option><option>Accessory</option>
       </select>
+      <select className="compactSelect" value={sort} onChange={e=>setSort(e.target.value as ItemSort)}>
+        <option>Newest</option><option>Name</option><option>Cost Low</option><option>Cost High</option>
+      </select>
       <span>{filtered.length} entries</span>
+    </div>
+    <div className="databaseSummary">
+      <span>Weapons <b>{summary.weapons}</b></span><span>Armor <b>{summary.armor}</b></span><span>Shields <b>{summary.shields}</b></span><span>Accessories <b>{summary.accessories}</b></span><span>Materials <b>{summary.materials}</b></span>
     </div>
     {filtered.length===0 ? <Empty text="No matching items saved yet. Generate one to start your database."/> : <div className="grid">{filtered.map(item=><ItemCard key={item.id} item={item} onDelete={()=>setItems(prev=>prev.filter(x=>x.id!==item.id))} />)}</div>}
   </section>
 }
 
 function ItemCard({ item, onDelete }: { item: AppItem; onDelete?:()=>void }) {
-  return <article className="card" key={item.id}>
+  return <article className="card itemCard" key={item.id}>
     <div className="cardTitle">
       <div><span className="source">{item.source}</span><h2>{item.name}</h2></div>
       {onDelete && <button className="danger" onClick={onDelete}>Delete</button>}
     </div>
-    <p className="muted">{item.type}{item.category ? ` · ${item.category}` : ''} · {item.cost}z {item.martial ? '· Martial' : ''}</p>
+    <div className="itemMeta"><span>{item.type}</span>{item.category && <span>{item.category}</span>}<span>{item.cost}z</span>{item.martial && <span>Martial</span>}{item.material && <span>Material</span>}</div>
     {item.baseItem && <p><strong>Base:</strong> {item.baseItem}</p>}
     {item.material && <div className="materialBox"><span className="source">Natural Fantasy Material</span><p><strong>{item.material.name}</strong> · {item.material.nature}</p><p className="muted">{item.material.descriptorKind}{item.material.element ? ` · ${item.material.element}` : ''}{item.material.function ? ` · ${item.material.function}` : ''}</p></div>}
     {item.origin && <p className="note"><strong>Origin:</strong> {item.origin}</p>}
