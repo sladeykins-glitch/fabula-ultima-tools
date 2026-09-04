@@ -103,7 +103,7 @@ export default function DatabaseRecentTools() {
       if (clear) {
         const bar = clear.closest<HTMLElement>('.dbRecentBar')
         const kind = bar?.dataset.dbRecentKind as Kind | undefined
-        if (!kind) return
+        if (!kind || !bar) return
         const recent = readRecent()
         recent[kind] = []
         writeRecent(recent)
