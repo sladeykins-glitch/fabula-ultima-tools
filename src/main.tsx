@@ -12,6 +12,8 @@ import SiteBackupTools from './SiteBackupTools'
 import DatabaseResultTools from './DatabaseResultTools'
 import DatabaseUndoTools from './DatabaseUndoTools'
 import AccessibilityTools from './AccessibilityTools'
+import DatabasePresetTools from './DatabasePresetTools'
+import DatabaseSelectionTools from './DatabaseSelectionTools'
 import './styles.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -28,5 +30,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <DatabaseResultTools />
     <DatabaseUndoTools />
     <AccessibilityTools />
+    <DatabasePresetTools />
+    <DatabaseSelectionTools />
   </React.StrictMode>,
 )
