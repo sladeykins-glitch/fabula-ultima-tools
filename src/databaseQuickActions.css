@@ -1,0 +1,6 @@
+.dbQuickActions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 12px; }
+.dbQuickActions button { border:1px solid #334155; background:#111827; color:#cbd5e1; border-radius:9px; padding:7px 9px; }
+.dbQuickActions button:hover { border-color:#64748b; color:#f8fafc; }
+.dbQuickHint { margin-left:auto; color:#7f8da3; font-size:.8rem; }
+.dbQuickHint kbd { display:inline-block; min-width:20px; padding:1px 5px; border:1px solid #475569; border-bottom-width:2px; border-radius:5px; background:#0f172a; color:#dbeafe; text-align:center; font:inherit; }
+@media (max-width:650px) { .dbQuickHint { width:100%; margin-left:0; } }
