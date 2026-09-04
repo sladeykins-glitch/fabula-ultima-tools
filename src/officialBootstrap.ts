@@ -1,5 +1,6 @@
 import { officialWeapons } from './officialData'
 import { officialCoreRareWeapons } from './officialCoreRareWeapons'
+import { officialAtlasRareWeapons } from './officialAtlasRareWeapons'
 import { officialOtherItems } from './officialOtherItems'
 import { officialMonsters } from './officialMonsters'
 
@@ -14,5 +15,5 @@ function mergeOfficial<T extends { id: string }>(key: string, official: T[]) {
   }
 }
 
-mergeOfficial('fu-items', [...officialWeapons, ...officialCoreRareWeapons, ...officialOtherItems])
+mergeOfficial('fu-items', [...officialWeapons, ...officialCoreRareWeapons, ...officialAtlasRareWeapons, ...officialOtherItems])
 mergeOfficial('fu-monsters', officialMonsters)
