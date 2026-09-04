@@ -1,5 +1,7 @@
+.cardActions { display:flex; align-items:center; justify-content:flex-end; gap:7px; flex-wrap:wrap; }
 .dbOpenButton { border: 1px solid #3b4965; background: #111827; color: #c7d2fe; border-radius: 10px; padding: 7px 9px; white-space: nowrap; }
 .dbOpenButton:hover { border-color: #818cf8; background: #1e1b4b; }
+.dbDirtyIndicator { display:inline-flex; margin-top:7px; padding:3px 7px; border:1px solid #a16207; border-radius:999px; background:rgba(120,53,15,.24); color:#fde68a; font-size:.76rem; font-weight:700; }
 .dbModalBackdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px; background: rgba(2,6,23,.82); backdrop-filter: blur(6px); }
 .dbModal { width: min(980px, 100%); max-height: min(90vh, 980px); overflow: auto; background: #0f172a; border: 1px solid #475569; border-radius: 18px; padding: 18px; box-shadow: 0 28px 90px rgba(0,0,0,.5); }
 .dbModalHeader { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; position: sticky; top: -18px; margin: -18px -18px 16px; padding: 18px; background: rgba(15,23,42,.97); border-bottom: 1px solid #263244; z-index: 2; }
@@ -29,6 +31,6 @@
 .dbSpellRow { grid-template-columns: minmax(130px,1fr) 80px minmax(120px,1fr) minmax(120px,1fr) minmax(220px,2fr) auto; }
 .dbReferenceDetails { margin-top: 18px; }
 .dbReferenceDetails pre { overflow: auto; max-height: 260px; padding: 12px; border: 1px solid #334155; border-radius: 10px; background: #080f1d; color: #cbd5e1; font-size: .78rem; white-space: pre-wrap; }
-.dbModalActions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid #263244; }
+.dbModalActions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid #263244; flex-wrap:wrap; }
 @media (max-width: 820px) { .dbArrayRow, .dbTwoField, .dbSpellRow { grid-template-columns: 1fr 1fr; } .dbArrayRow textarea { grid-column: 1 / -1; } .dbArrayRow .danger { grid-column: 1 / -1; } .dbAffinityGrid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
-@media (max-width: 650px) { .dbModalBackdrop { padding: 8px; } .dbModal { max-height: 94vh; padding: 14px; } .dbEditGrid, .dbCompactGrid, .dbAffinityGrid, .dbArrayRow, .dbTwoField, .dbSpellRow { grid-template-columns: 1fr; } .dbWide, .dbArrayRow textarea, .dbArrayRow .danger { grid-column: auto; } .dbCheckLabel { grid-template-columns: auto 1fr !important; } .dbModalHeader { top: -14px; margin: -14px -14px 14px; padding: 14px; } .dbOpenButton { padding: 6px 8px; font-size: .82rem; } .dbSectionHeader { align-items: stretch; flex-direction: column; } }
+@media (max-width: 650px) { .dbModalBackdrop { padding: 8px; } .dbModal { max-height: 94vh; padding: 14px; } .dbEditGrid, .dbCompactGrid, .dbAffinityGrid, .dbArrayRow, .dbTwoField, .dbSpellRow { grid-template-columns: 1fr; } .dbWide, .dbArrayRow textarea, .dbArrayRow .danger { grid-column: auto; } .dbCheckLabel { grid-template-columns: auto 1fr !important; } .dbModalHeader { top: -14px; margin: -14px -14px 14px; padding: 14px; } .dbOpenButton { padding: 6px 8px; font-size: .82rem; } .dbSectionHeader { align-items: stretch; flex-direction: column; } .cardActions { width:100%; justify-content:flex-start; } .dbModalActions button { flex:1 1 140px; } }
