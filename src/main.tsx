@@ -9,6 +9,7 @@ import SavedViewsTools from './SavedViewsTools'
 import UndoDeleteTools from './UndoDeleteTools'
 import DatabaseUtilityPanel from './DatabaseUtilityPanel'
 import PwaTools from './PwaTools'
+import AestraRegionalTheme from './AestraRegionalTheme'
 import { ensureOfficialData } from './officialBootstrap'
 import { migrateInterfaceStorage } from './storageMigrations'
 import './styles.css'
@@ -22,6 +23,7 @@ function renderApp() {
       <AppErrorBoundary>
         <App />
       </AppErrorBoundary>
+      <AestraRegionalTheme />
       <DatabaseOverlay />
       <SiteBackupTools />
       <SessionUtilityTools />
