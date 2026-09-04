@@ -14,3 +14,4 @@ item_new=item_old+'<div className="subpanel"><span className="source">Quality ch
 if item_old not in s: raise SystemExit('item quality needle missing')
 s=s.replace(item_old,item_new,1)
 p.write_text(s)
+# migration trigger 1
