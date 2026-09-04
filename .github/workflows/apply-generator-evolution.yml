@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: python3 scripts/apply-generator-evolution.py
+      - run: python3 scripts/apply-generator-evolution-wrapper.py
       - run: npm install --no-audit --no-fund --prefer-offline
       - run: npm run build
       - name: Commit migration
