@@ -173,26 +173,39 @@ function MonsterGenerator({ onSave }: { onSave: (m:Monster)=>void }) {
 function ItemDatabase({ items, setItems }: { items: AppItem[]; setItems: React.Dispatch<React.SetStateAction<AppItem[]>> }) {
   const [search, setSearch] = useState('')
   const [type, setType] = useState<'All'|ItemType>('All')
+  const [category, setCategory] = useState('All')
+  const [martialFilter, setMartialFilter] = useState<'All'|'Martial'|'Non-martial'>('All')
+  const [materialFilter, setMaterialFilter] = useState<'All'|'With Material'|'No Material'>('All')
   const [sort, setSort] = useState<ItemSort>('Newest')
+
+  const categories = useMemo(() => Array.from(new Set(items.map(i=>i.category).filter((value): value is string => !!value))).sort(), [items])
 
   const filtered = useMemo(() => {
     const matches = items.filter(item => {
       const materialText = item.material ? `${item.material.name} ${item.material.nature} ${item.material.element || ''} ${item.material.function || ''}` : ''
       const haystack = `${item.name} ${item.type} ${item.category || ''} ${item.baseItem || ''} ${item.quality || ''} ${item.effect} ${materialText} ${item.origin || ''}`.toLowerCase()
-      return haystack.includes(search.toLowerCase()) && (type === 'All' || item.type === type)
+      const matchesMartial = martialFilter === 'All' || (martialFilter === 'Martial' ? !!item.martial : !item.martial)
+      const matchesMaterial = materialFilter === 'All' || (materialFilter === 'With Material' ? !!item.material : !item.material)
+      return haystack.includes(search.toLowerCase())
+        && (type === 'All' || item.type === type)
+        && (category === 'All' || item.category === category)
+        && matchesMartial
+        && matchesMaterial
     })
     if (sort === 'Name') return [...matches].sort((a,b)=>a.name.localeCompare(b.name))
     if (sort === 'Cost Low') return [...matches].sort((a,b)=>a.cost-b.cost)
     if (sort === 'Cost High') return [...matches].sort((a,b)=>b.cost-a.cost)
     return matches
-  }, [items, search, type, sort])
+  }, [items, search, type, category, martialFilter, materialFilter, sort])
 
   const summary = useMemo(() => ({
     weapons: filtered.filter(i=>i.type==='Weapon').length,
     armor: filtered.filter(i=>i.type==='Armor').length,
     shields: filtered.filter(i=>i.type==='Shield').length,
     accessories: filtered.filter(i=>i.type==='Accessory').length,
+    martial: filtered.filter(i=>!!i.martial).length,
     materials: filtered.filter(i=>!!i.material).length,
+    averageCost: filtered.length ? Math.round(filtered.reduce((total,i)=>total+i.cost,0) / filtered.length) : 0,
   }), [filtered])
 
   return <section>
@@ -201,13 +214,22 @@ function ItemDatabase({ items, setItems }: { items: AppItem[]; setItems: React.D
       <select className="compactSelect" value={type} onChange={e=>setType(e.target.value as 'All'|ItemType)}>
         <option>All</option><option>Weapon</option><option>Armor</option><option>Shield</option><option>Accessory</option>
       </select>
+      <select className="compactSelect" value={category} onChange={e=>setCategory(e.target.value)}>
+        <option>All</option>{categories.map(c=><option key={c}>{c}</option>)}
+      </select>
+      <select className="compactSelect" value={martialFilter} onChange={e=>setMartialFilter(e.target.value as 'All'|'Martial'|'Non-martial')}>
+        <option>All</option><option>Martial</option><option>Non-martial</option>
+      </select>
+      <select className="compactSelect" value={materialFilter} onChange={e=>setMaterialFilter(e.target.value as 'All'|'With Material'|'No Material')}>
+        <option>All</option><option>With Material</option><option>No Material</option>
+      </select>
       <select className="compactSelect" value={sort} onChange={e=>setSort(e.target.value as ItemSort)}>
         <option>Newest</option><option>Name</option><option>Cost Low</option><option>Cost High</option>
       </select>
       <span>{filtered.length} entries</span>
     </div>
     <div className="databaseSummary">
-      <span>Weapons <b>{summary.weapons}</b></span><span>Armor <b>{summary.armor}</b></span><span>Shields <b>{summary.shields}</b></span><span>Accessories <b>{summary.accessories}</b></span><span>Materials <b>{summary.materials}</b></span>
+      <span>Weapons <b>{summary.weapons}</b></span><span>Armor <b>{summary.armor}</b></span><span>Shields <b>{summary.shields}</b></span><span>Accessories <b>{summary.accessories}</b></span><span>Martial <b>{summary.martial}</b></span><span>Materials <b>{summary.materials}</b></span><span>Avg Cost <b>{summary.averageCost}z</b></span>
     </div>
     {filtered.length===0 ? <Empty text="No matching items saved yet. Generate one to start your database."/> : <div className="grid">{filtered.map(item=><ItemCard key={item.id} item={item} onDelete={()=>setItems(prev=>prev.filter(x=>x.id!==item.id))} />)}</div>}
   </section>
