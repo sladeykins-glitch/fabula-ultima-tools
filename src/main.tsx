@@ -9,6 +9,7 @@ import DatabaseQualityTools from './DatabaseQualityTools'
 import DatabaseQuickActions from './DatabaseQuickActions'
 import DatabaseEditorEnhancements from './DatabaseEditorEnhancements'
 import SiteBackupTools from './SiteBackupTools'
+import DatabaseResultTools from './DatabaseResultTools'
 import './styles.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -22,5 +23,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <DatabaseQuickActions />
     <DatabaseEditorEnhancements />
     <SiteBackupTools />
+    <DatabaseResultTools />
   </React.StrictMode>,
 )
