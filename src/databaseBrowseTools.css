@@ -1,0 +1,19 @@
+.dbBrowseBar { display:flex; justify-content:space-between; align-items:center; gap:10px; margin:0 0 14px; padding:9px 10px; border:1px solid #2a374a; border-radius:12px; background:rgba(15,23,42,.58); }
+.dbBrowseLeft,.dbBrowseRight { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.dbBrowseRight span { color:#94a3b8; font-size:.85rem; }
+.dbBrowseBar button { border:1px solid #334155; background:#111827; color:#cbd5e1; border-radius:9px; padding:7px 9px; }
+.dbBrowseBar button.active { background:#312e81; border-color:#818cf8; color:#eef2ff; }
+.dbFavoriteButton { border:1px solid #3b4965; background:#111827; color:#c7d2fe; border-radius:10px; min-width:36px; padding:7px 9px; font-size:1rem; line-height:1; }
+.dbFavoriteButton.active { background:#3b2f12; border-color:#a16207; color:#fde68a; }
+.dbFavoriteCard { outline:1px solid rgba(251,191,36,.28); }
+.dbHiddenByFavorite { display:none !important; }
+.dbCompactMode .grid { grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); }
+.dbCompactMode .monsterCard,
+.dbCompactMode .itemCard { padding:12px 13px; }
+.dbCompactMode .monsterCard > :not(.cardTitle):not(.muted):not(.stats),
+.dbCompactMode .itemCard > :not(.cardTitle):not(.itemMeta):not(.stats):not(.attack) { display:none !important; }
+.dbCompactMode .monsterCard .stats { margin:8px 0 0; }
+.dbCompactMode .itemCard .itemMeta { margin:6px 0 8px; }
+.dbCompactMode .itemCard .attack { max-height:4.2em; overflow:hidden; margin-bottom:0; }
+.dbCompactMode .cardTitle h2 { font-size:1.05rem; margin:4px 0; }
+@media (max-width:650px) { .dbBrowseBar { align-items:stretch; flex-direction:column; } .dbBrowseLeft,.dbBrowseRight { justify-content:space-between; } }
