@@ -4,6 +4,7 @@ import App from './App'
 import AppErrorBoundary from './AppErrorBoundary'
 import DatabaseOverlay from './DatabaseOverlay'
 import SiteBackupTools from './SiteBackupTools'
+import SessionUtilityTools from './SessionUtilityTools'
 import PwaTools from './PwaTools'
 import { ensureOfficialData } from './officialBootstrap'
 import './styles.css'
@@ -18,6 +19,7 @@ function renderApp() {
       </AppErrorBoundary>
       <DatabaseOverlay />
       <SiteBackupTools />
+      <SessionUtilityTools />
       <PwaTools />
     </React.StrictMode>,
   )
