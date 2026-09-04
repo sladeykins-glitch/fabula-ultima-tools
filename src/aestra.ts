@@ -249,7 +249,7 @@ function applyOriginMechanics(monster:Monster,nation:AestraNation,origin:AestraO
   return {...monster,attacks,skills,affinities,hp,crisis,mp,magicBonus,accuracyBonus,notes:[`Origin mechanics: ${note}`,...(monster.notes||[]).filter(n=>!n.startsWith('Origin mechanics: '))]}
 }
 
-function applyCrystalMechanics(monster:Monster,influence:AestraInfluence):Monster {
+export function applyAestraCrystalInfluence(monster:Monster,influence:AestraInfluence):Monster {
   const attacks=[...(monster.attacks||[])]
   const affinities={...monster.affinities}
   let hp=monster.hp, crisis=monster.crisis, mp=monster.mp
@@ -296,7 +296,7 @@ export function applyAestraMonsterIdentity(monster:Monster,nation:AestraNation,o
   }
   result=applyNationMechanics(result,nation,origin,effectiveDepth)
   result=applyOriginMechanics(result,nation,origin)
-  result=applyCrystalMechanics(result,influence)
+  result=applyAestraCrystalInfluence(result,influence)
   result={...result,notes:[
       `Aestra: ${nation} — ${origin}.`,
       `National identity: ${p.identity}`,

@@ -122,7 +122,7 @@ function influenceEffect(item:AestraItem,influence:AestraInfluence):AestraItem {
     Overcharged:'Aestra — Overcharged state: once per scene add +5 damage or +1 Defense to an effect involving this item; after resolving it, the bearer loses 5 HP.',
     Corrupted:'Aestra — Corrupted state: once per scene the bearer may change damage from this item to dark or poison; after doing so, they suffer weak until the end of the scene.'
   }
-  const clean=baseEffect(item)
+  const clean=(item.effect||'').trim()
   return {...item,effect:`${clean} ${extra[influence]}`.trim(),breakdown:[...(item.breakdown||[]).filter(x=>!x.startsWith('Crystal influence: ')),`Crystal influence: ${influence}.`]}
 }
 
@@ -142,7 +142,7 @@ export function applyAestraNationItemIdentity(item:AestraItem,nation:AestraNatio
   return influenceEffect(transformed,influence)
 }
 
-export function applyAestraWildItemIdentity(item:AestraItem,environment:AestraEnvironment,exposure:AestraExposure,origin:AestraWildOrigin):AestraItem {
+export function applyAestraWildItemIdentity(item:AestraItem,environment:AestraEnvironment,exposure:AestraExposure,origin:AestraWildOrigin,influence:AestraInfluence='Stable'):AestraItem {
   const p=environmentProfiles[environment]
   let transformed=withProfile(item,p,`Aestra uncontrolled lands — ${environment} — ${exposure} — ${origin}`,p.damage)
   const exposureText:Record<AestraExposure,string>={
@@ -158,5 +158,6 @@ export function applyAestraWildItemIdentity(item:AestraItem,environment:AestraEn
     'Abandoned Site':'Left behind by a vanished expedition, settlement or installation.',
     'Lost Era':'Predates current nations and may no longer be used for its original purpose.'
   }
-  return {...transformed,breakdown:[...(transformed.breakdown||[]),`Exposure: ${exposure} — ${exposureText[exposure]}`,`Wild origin: ${origin} — ${originText[origin]}`]}
+  transformed={...transformed,breakdown:[...(transformed.breakdown||[]),`Exposure: ${exposure} — ${exposureText[exposure]}`,`Wild origin: ${origin} — ${originText[origin]}`]}
+  return influenceEffect(transformed,influence)
 }
