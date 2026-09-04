@@ -19,7 +19,7 @@ h2 { margin: 6px 0; }
 h3 { margin-bottom: 8px; }
 .eyebrow, .source { text-transform: uppercase; letter-spacing: .15em; font-size: .72rem; color: #a5b4fc; font-weight: 800; }
 .badge { border: 1px solid #475569; border-radius: 999px; padding: 5px 10px; color: #cbd5e1; }
-nav { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; position: sticky; top: 0; z-index: 5; padding: 8px 0; background: rgba(11,16,32,.82); backdrop-filter: blur(10px); }
+nav { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; position: sticky; top: 0; z-index: 5; padding: 8px 0; background: rgba(11,16,32,.96); }
 nav button, .buttonRow button, .panel > button, .danger { border: 1px solid #334155; background: #111827; color: #e5e7eb; border-radius: 12px; padding: 10px 12px; }
 nav button:hover, .buttonRow button:hover, .panel > button:hover { border-color: #64748b; }
 nav button.active { background: #312e81; border-color: #818cf8; }
@@ -35,8 +35,10 @@ input[type="range"] { padding: 0; }
 input[type="checkbox"] { width: auto; accent-color: #6366f1; }
 .checkRow { grid-template-columns: auto 1fr !important; align-items: center; }
 .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
-.card, .panel { background: rgba(15,23,42,.88); border: 1px solid #263244; border-radius: 16px; padding: 16px; box-shadow: 0 14px 40px rgba(0,0,0,.16); }
-.card { transition: border-color .15s ease, box-shadow .15s ease; }
+.card, .panel { background: rgba(15,23,42,.88); border: 1px solid #263244; border-radius: 16px; padding: 16px; box-shadow: 0 10px 24px rgba(0,0,0,.13); }
+/* Database cards can be numerous. Let the browser skip layout/paint work for off-screen cards. */
+main > section:has(.databaseSummary) .card { content-visibility: auto; contain-intrinsic-size: auto 560px; contain: layout paint style; }
+.card { transition: border-color .15s ease; }
 .card:hover { border-color: #35445a; }
 .cardTitle { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .muted { color: #94a3b8; }
