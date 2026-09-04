@@ -1,0 +1,6 @@
+.siteBackupTools { margin-left:auto; display:flex; align-items:center; justify-content:flex-end; gap:7px; flex-wrap:wrap; max-width:520px; }
+.siteBackupTools button { border:1px solid #334155; background:#111827; color:#cbd5e1; border-radius:10px; padding:7px 9px; white-space:nowrap; }
+.siteBackupTools button:hover { border-color:#818cf8; color:#eef2ff; }
+.siteBackupTools input { display:none; }
+.siteBackupMessage { flex:1 1 100%; color:#c7d2fe; font-size:.78rem; text-align:right; }
+@media (max-width:760px) { .siteBackupTools { width:100%; margin-left:0; justify-content:flex-start; } .siteBackupMessage { text-align:left; } }
