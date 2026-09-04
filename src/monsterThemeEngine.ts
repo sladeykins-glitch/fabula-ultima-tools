@@ -229,7 +229,20 @@ function finishTheme(monster:Monster, theme:MonsterTheme, primary:DamageType, st
   const p=profiles[theme], style=monster.combatStyle||'Mixed', secondary=secondaryFor(p,primary)
   const opts={name:true,attacks:true,skills:true,spells:true,traits:true,affinities:false,...options}
   let skills=opts.skills ? rewriteSkills(monster.skills||[],style,primary,status,theme) : (monster.skills||[]).filter(skill=>!skill.name.startsWith('Champion Phase —'))
-  if(monster.rank==='Champion') skills=[...skills,championPhase(theme,style,primary,status)]
+  if(monster.rank==='Champion') {
+    const phase=championPhase(theme,style,primary,status)
+    // A Champion phase is part of the existing skill budget, not a free extra skill.
+    // Prefer replacing Crisis Effect because both occupy the same Crisis-facing design space;
+    // otherwise replace Unique Action, then the final generated skill. Only a zero-skill
+    // Champion needs the phase appended so it still has a defining Champion mechanic.
+    const replaceIndex=skills.findIndex(skill=>skill.name==='Crisis Effect')>=0
+      ? skills.findIndex(skill=>skill.name==='Crisis Effect')
+      : skills.findIndex(skill=>skill.name==='Unique Action')>=0
+        ? skills.findIndex(skill=>skill.name==='Unique Action')
+        : skills.length-1
+    if(replaceIndex>=0) skills=skills.map((skill,index)=>index===replaceIndex?phase:skill)
+    else skills=[phase]
+  }
   const baseNotes=cleanThemeNotes(monster.notes||[])
   const gimmick=`Core gimmick: ${capital(primary)} damage sets up ${status}; ${style.toLowerCase()} abilities exploit that setup.`
   const combatLoop=`Combat loop: establish ${status} with the setup attack or spell, exploit it with the payoff attack or role skill${monster.rank==='Champion'?', then escalate the same loop through Crisis':''}.`

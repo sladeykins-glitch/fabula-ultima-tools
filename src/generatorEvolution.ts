@@ -33,6 +33,33 @@ function cleanFamilyName(name:string){
     .trim()
 }
 
+function gimmickNote(monster:Monster){
+  return (monster.notes||[]).find(line=>line.startsWith('Core gimmick: '))
+}
+
+function signatureAttack(base:Monster){
+  return (base.attacks||[])[0]
+}
+
+function inheritFamilyIdentity(base:Monster,generated:Monster,variant:MonsterVariant):Monster{
+  const signature=signatureAttack(base)
+  const baseGimmick=gimmickNote(base)
+  const inheritedTraits=[...(base.traits||[]).slice(0,2),...(generated.traits||[])].filter((value,index,array)=>array.indexOf(value)===index).slice(0,4)
+  const attacks=[...(generated.attacks||[])]
+  if(signature&&attacks.length){
+    const current=attacks[0]
+    attacks[0]={...current,name:signature.name,damageType:signature.damageType,effect:signature.effect||current.effect}
+  }
+  let notes=(generated.notes||[]).filter(line=>!line.startsWith('Variant lineage: ')&&!line.startsWith('Inherited signature: '))
+  if(baseGimmick){
+    notes=notes.filter(line=>!line.startsWith('Core gimmick: '))
+    notes.splice(Math.min(1,notes.length),0,baseGimmick)
+  }
+  notes.push(`Variant lineage: ${variant} evolution of ${base.name}. Species, family traits and signature combat motif are inherited rather than regenerated from scratch.`)
+  if(signature) notes.push(`Inherited signature: ${signature.name} (${signature.damageType} damage).`)
+  return {...generated,traits:inheritedTraits,attacks,notes}
+}
+
 export function createMonsterVariant(base:Monster,variant:MonsterVariant):Monster{
   const currentTheme=monsterThemeFromNotes(base)
   let level=base.level,rank=base.rank,style=base.combatStyle||'Mixed',theme=currentTheme,soldierEquivalent=base.soldierEquivalent||3
@@ -52,7 +79,8 @@ export function createMonsterVariant(base:Monster,variant:MonsterVariant):Monste
   const themed=applyMonsterTheme(generated,theme)
   const familyName=cleanFamilyName(base.name) || 'Creature'
   const suffix:Record<MonsterVariant,string>={Minion:'Lesser',Elite:'Ascendant',Champion:'Apex',Corrupted:'Corrupted',Elemental:'Elemental', 'Role Shift':'Variant'}
-  return {...themed,name:`${suffix[variant]} ${familyName}`,notes:[...(themed.notes||[]),`Variant lineage: ${variant} evolution of ${base.name}. Core species and family identity intentionally preserved.`]}
+  const inherited=inheritFamilyIdentity(base,themed,variant)
+  return {...inherited,name:`${suffix[variant]} ${familyName}`}
 }
 
 export function monsterCoherenceSummary(monster:Monster):string{
