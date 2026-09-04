@@ -1,0 +1,8 @@
+.dbAdvancedSearchBar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:-2px 0 12px; padding:9px 10px; border:1px solid #334155; border-radius:12px; background:rgba(8,15,29,.52); }
+.dbAdvancedSearchBar > span { margin-right:auto; color:#94a3b8; font-size:.84rem; }
+.dbAdvancedSearchBar strong { color:#c7d2fe; }
+.dbAdvancedSearchBar button { border:1px solid #334155; background:#111827; color:#e5e7eb; border-radius:9px; padding:6px 9px; }
+.dbAdvancedSearchBar button:hover:not(:disabled) { border-color:#818cf8; }
+.dbAdvancedSearchBar button:disabled { opacity:.42; cursor:not-allowed; }
+.dbHiddenByAdvanced { display:none !important; }
+@media (max-width:650px) { .dbAdvancedSearchBar > span { flex-basis:100%; margin-right:0; } .dbAdvancedSearchBar button { flex:1 1 auto; } }
