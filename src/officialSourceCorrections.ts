@@ -39,10 +39,6 @@ const corePages: Record<string, number> = {
 }
 
 const corrections: Record<string, Correction> = {
-  'official-techno-pure-concept': {
-    note: 'Printed Species is “???”. The app represents this profile as Monster because its Species field currently supports only the standard Fabula Ultima species categories.',
-  },
-
   // Core Rulebook v1.02 — primary score corrections discovered in the Bestiary audit.
   'official-core-spikeflake': { patch: { magicDefense: 12 } },
   'official-core-cragboar': { patch: { magicDefense: 6 } },
@@ -98,6 +94,46 @@ const corrections: Record<string, Correction> = {
   'official-high-catharsis': {
     patch: { magicDefense: 14, levelDamageBonus: 15 },
     note: 'Source audit: Atlas: High Fantasy, printed page 196. M. DEF is INS d12 +2 = 14; level 60 NPCs use the +15 level damage bonus.',
+  },
+
+  // Atlas: Natural Fantasy — verified from the full raw scanned PDF pages.
+  'official-natural-tonitranea-abdomen': { patch: { magicDefense: 6 }, note: 'Source audit: Atlas: Natural Fantasy, printed page 178. M. DEF is INS d6 +0 = 6.' },
+  'official-natural-tonitranea-head': { patch: { magicDefense: 10 }, note: 'Source audit: Atlas: Natural Fantasy, printed page 178. M. DEF is INS d10 +0 = 10.' },
+  'official-natural-tonitranea-thorax': { note: 'Source audit: Atlas: Natural Fantasy, printed page 179.' },
+  'official-natural-node': { patch: { magicDefense: 7 }, note: 'Source audit: Atlas: Natural Fantasy, printed page 184. M. DEF is INS d6 +1 = 7.' },
+  'official-natural-dylon': { patch: { defense: 8, magicDefense: 9 }, note: 'Source audit: Atlas: Natural Fantasy, printed page 185. DEF is DEX d6 +2 = 8; M. DEF is INS d8 +1 = 9.' },
+  'official-natural-will-o-wisp': { patch: { defense: 12 }, note: 'Source audit: Atlas: Natural Fantasy, printed page 189. DEF is DEX d12 +0 = 12.' },
+  'official-natural-brightvale-head': { patch: { magicDefense: 6 }, note: 'Source audit: Atlas: Natural Fantasy, printed page 191. M. DEF is INS d6 +0 = 6.' },
+  'official-natural-titania-midday': { patch: { magicDefense: 12 }, note: 'Source audit: Atlas: Natural Fantasy, printed page 194. M. DEF is INS d10 +2 = 12.' },
+  'official-natural-sun-poppy': { patch: { magicDefense: 12 }, note: 'Source audit: Atlas: Natural Fantasy, printed page 195. M. DEF is INS d10 +2 = 12.' },
+  'official-natural-titania-midnight': { patch: { defense: 10 }, note: 'Source audit: Atlas: Natural Fantasy, printed page 196. DEF is DEX d10 +0 = 10.' },
+  'official-natural-moon-orchid': { patch: { defense: 12 }, note: 'Source audit: Atlas: Natural Fantasy, printed page 197. DEF is DEX d10 +2 = 12.' },
+  'official-natural-ashen-radande': { patch: { defense: 10, magicDefense: 12 }, note: 'Source audit: Atlas: Natural Fantasy, printed page 201. DEF is DEX d10 +0 = 10; M. DEF is INS d12 +0 = 12.' },
+  'official-natural-eldgren': { patch: { defense: 6 }, note: 'Source audit: Atlas: Natural Fantasy, printed page 203. DEF is DEX d6 +0 = 6.' },
+  'official-natural-eldgren-heart': { patch: { magicDefense: 10 }, note: 'Source audit: Atlas: Natural Fantasy, printed page 205. M. DEF is INS d10 +0 = 10.' },
+
+  // Atlas: Techno Fantasy — verified from the full raw scanned PDF pages.
+  'official-techno-commissioner-vyne': { patch: { defense: 9 }, note: 'Source audit: Atlas: Techno Fantasy, printed page 186. DEF is DEX d6 +3 = 9.' },
+  'official-techno-syntech-cop': { note: 'Source audit: Atlas: Techno Fantasy, printed page 187.' },
+  'official-techno-surveillance-drone': { note: 'Source audit: Atlas: Techno Fantasy, printed page 188.' },
+  'official-techno-eight': { patch: { magicDefense: 12 }, note: 'Source audit: Atlas: Techno Fantasy, printed page 192. M. DEF is INS d10 +2 = 12.' },
+  'official-techno-nine': { patch: { defense: 6 }, note: 'Source audit: Atlas: Techno Fantasy, printed page 193. DEF is DEX d6 +0 = 6.' },
+  'official-techno-seven': { patch: { magicDefense: 10 }, note: 'Source audit: Atlas: Techno Fantasy, printed page 194. M. DEF is INS d10 +0 = 10.' },
+  'official-techno-primary-core': { patch: { magicDefense: 10 }, note: 'Source audit: Atlas: Techno Fantasy, printed page 198. M. DEF is INS d10 +0 = 10.' },
+  'official-techno-digital-limb-a': { patch: { defense: 10 }, note: 'Source audit: Atlas: Techno Fantasy, printed page 199. DEF is DEX d10 +0 = 10.' },
+  'official-techno-digital-limb-b': { patch: { magicDefense: 12 }, note: 'Source audit: Atlas: Techno Fantasy, printed page 199. M. DEF is INS d10 +2 = 12.' },
+  'official-techno-relentless': { patch: { magicDefense: 10 }, note: 'Source audit: Atlas: Techno Fantasy, printed page 202. M. DEF is INS d10 +0 = 10.' },
+  'official-techno-attack-wing': { patch: { defense: 12, magicDefense: 10 }, note: 'Source audit: Atlas: Techno Fantasy, printed page 203. DEF is DEX d12 +0 = 12; M. DEF is INS d10 +0 = 10.' },
+  'official-techno-support-wing': { patch: { defense: 10, magicDefense: 12 }, note: 'Source audit: Atlas: Techno Fantasy, printed page 203. DEF is DEX d10 +0 = 10; M. DEF is INS d12 +0 = 12.' },
+  'official-techno-admiral-ceryon': { patch: { defense: 11, magicDefense: 11 }, note: 'Source audit: Atlas: Techno Fantasy, printed page 204. DEF and M. DEF are both d10 +1 = 11.' },
+  'official-techno-bioengine': { patch: { defense: 14, magicDefense: 10 }, note: 'Source audit: Atlas: Techno Fantasy, printed page 205. DEF is DEX d12 +2 = 14; M. DEF is INS d6 +4 = 10.' },
+  'official-techno-patriarch': { patch: { defense: 10, magicDefense: 15 }, note: 'Source audit: Atlas: Techno Fantasy, printed page 210. DEF is DEX d6 +4 = 10; M. DEF is INS d10 +5 = 15.' },
+  'official-techno-right-hand': { patch: { defense: 13, magicDefense: 12 }, note: 'Source audit: Atlas: Techno Fantasy, printed page 211. DEF is DEX d10 +3 = 13; M. DEF is INS d10 +2 = 12.' },
+  'official-techno-left-hand': { note: 'Source audit: Atlas: Techno Fantasy, printed page 211. Printed DEF is 14; M. DEF is INS d8 +2 = 10.' },
+  'official-techno-conceptual-dyad': { patch: { magicDefense: 13 }, note: 'Source audit: Atlas: Techno Fantasy, printed page 212. DEF is DEX d8 +3 = 11; M. DEF is INS d10 +3 = 13.' },
+  'official-techno-pure-concept': {
+    patch: { magicDefense: 11 },
+    note: 'Source audit: Atlas: Techno Fantasy, printed page 213. DEF and M. DEF are both d8 +3 = 11. Printed Species is “???”; the app represents this profile as Monster because its Species field supports only the standard Fabula Ultima species categories.',
   },
 }
 
