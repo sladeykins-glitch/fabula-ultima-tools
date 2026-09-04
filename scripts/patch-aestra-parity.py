@@ -4,7 +4,7 @@ from pathlib import Path
 p=Path('src/aestra.ts')
 s=p.read_text()
 s=s.replace('function applyCrystalMechanics(monster:Monster,influence:AestraInfluence):Monster {','export function applyAestraCrystalInfluence(monster:Monster,influence:AestraInfluence):Monster {')
-s=s.replace('applyCrystalMechanics(transformed,influence)','applyAestraCrystalInfluence(transformed,influence)')
+s=s.replace('applyCrystalMechanics(', 'applyAestraCrystalInfluence(')
 p.write_text(s)
 
 # 2) Preserve the regional item effect when crystal influence is appended, and allow wild items to use crystal influence too.
@@ -15,7 +15,7 @@ s=s.replace('export function applyAestraWildItemIdentity(item:AestraItem,environ
 s=s.replace("  return {...transformed,breakdown:[...(transformed.breakdown||[]),`Exposure: ${exposure} — ${exposureText[exposure]}`,`Wild origin: ${origin} — ${originText[origin]}`]}\n}\n", "  transformed={...transformed,breakdown:[...(transformed.breakdown||[]),`Exposure: ${exposure} — ${exposureText[exposure]}`,`Wild origin: ${origin} — ${originText[origin]}`]}\n  return influenceEffect(transformed,influence)\n}\n")
 p.write_text(s)
 
-# 3) Wire the shared crystal layer into wild monster/item generation and expose the selector in wild monster UI.
+# 3) Wire the shared crystal layer into wild monster/item generation and expose the selector in wild UI.
 p=Path('src/App.tsx')
 s=p.read_text()
 s=s.replace("import { aestraNations, aestraOrigins, applyAestraMonsterIdentity, aestraGenerationHint, refreshAestraAffinities, refreshAestraMonsterLabel, AestraInfluence, AestraNation, AestraOrigin, valdoriaDepths, ValdoriaDepth } from './aestra'", "import { aestraNations, aestraOrigins, applyAestraMonsterIdentity, applyAestraCrystalInfluence, aestraGenerationHint, refreshAestraAffinities, refreshAestraMonsterLabel, AestraInfluence, AestraNation, AestraOrigin, valdoriaDepths, ValdoriaDepth } from './aestra'")
