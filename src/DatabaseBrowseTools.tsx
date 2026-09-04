@@ -45,6 +45,17 @@ function cardName(card: HTMLElement) {
   return card.querySelector('h2')?.textContent?.trim() || ''
 }
 
+function cardKey(kind: Kind, card: HTMLElement) {
+  const explicit = card.dataset.dbRecordId
+  if (explicit) return explicit
+  const name = cardName(card)
+  const source = card.querySelector('.source')?.textContent?.trim() || ''
+  const detail = kind === 'monster'
+    ? card.querySelector('.muted')?.textContent?.trim() || ''
+    : card.querySelector('.itemMeta')?.textContent?.trim() || ''
+  return `${kind}|${name}|${source}|${detail}`
+}
+
 function databaseKind(section: HTMLElement): Kind | null {
   if (section.querySelector('.monsterCard')) return 'monster'
   if (section.querySelector('.itemCard')) return 'item'
@@ -72,6 +83,7 @@ export default function DatabaseBrowseTools() {
       const favorites = readFavorites()
       const views = readViews()
       const favoritesOnly = readOnly()
+      let migrated = false
 
       document.querySelectorAll<HTMLElement>('main > section').forEach(section => {
         if (!section.querySelector('.databaseSummary')) return
@@ -91,12 +103,16 @@ export default function DatabaseBrowseTools() {
           summary?.insertAdjacentElement('afterend', bar)
         }
 
-        updateBrowseBar(bar, kind, views[kind], favorites[kind].length, favoritesOnly[kind])
-
         section.querySelectorAll<HTMLElement>('.monsterCard, .itemCard').forEach(card => {
           const name = cardName(card)
           if (!name) return
-          const isFavorite = favorites[kind].includes(name)
+          const key = cardKey(kind, card)
+          const legacyFavorite = favorites[kind].includes(name)
+          if (legacyFavorite && !favorites[kind].includes(key)) {
+            favorites[kind] = [...favorites[kind].filter(entry => entry !== name), key]
+            migrated = true
+          }
+          const isFavorite = favorites[kind].includes(key)
           card.classList.toggle('dbFavoriteCard', isFavorite)
           card.classList.toggle('dbHiddenByFavorite', favoritesOnly[kind] && !isFavorite)
 
@@ -110,13 +126,18 @@ export default function DatabaseBrowseTools() {
             star.dataset.dbFavorite = kind
             title.appendChild(star)
           }
+          star.dataset.dbFavoriteKey = key
           star.dataset.dbFavoriteName = name
           star.classList.toggle('active', isFavorite)
           star.textContent = isFavorite ? '★' : '☆'
           star.title = isFavorite ? 'Remove from favorites' : 'Add to favorites'
           star.setAttribute('aria-label', star.title)
         })
+
+        updateBrowseBar(bar, kind, views[kind], favorites[kind].length, favoritesOnly[kind])
       })
+
+      if (migrated) writeFavorites(favorites)
     }
 
     const onClick = (event: MouseEvent) => {
@@ -127,12 +148,13 @@ export default function DatabaseBrowseTools() {
         event.preventDefault()
         event.stopPropagation()
         const kind = favoriteButton.dataset.dbFavorite as Kind
-        const name = favoriteButton.dataset.dbFavoriteName || ''
-        if (!name) return
+        const key = favoriteButton.dataset.dbFavoriteKey || ''
+        const legacyName = favoriteButton.dataset.dbFavoriteName || ''
+        if (!key) return
         const favorites = readFavorites()
-        favorites[kind] = favorites[kind].includes(name)
-          ? favorites[kind].filter(entry => entry !== name)
-          : [...favorites[kind], name]
+        const active = favorites[kind].includes(key) || (legacyName && favorites[kind].includes(legacyName))
+        favorites[kind] = favorites[kind].filter(entry => entry !== key && entry !== legacyName)
+        if (!active) favorites[kind] = [...favorites[kind], key]
         writeFavorites(favorites)
         apply()
         return
