@@ -7,6 +7,7 @@ import { officialCoreBestiaryRemaining } from './officialCoreBestiaryRemaining'
 import { officialHighFantasyMonsters } from './officialHighFantasyMonsters'
 import { officialNaturalFantasyMonsters } from './officialNaturalFantasyMonsters'
 import { officialTechnoFantasyMonsters } from './officialTechnoFantasyMonsters'
+import { officialTechnoFantasySupplement } from './officialTechnoFantasySupplement'
 
 function mergeOfficial<T extends { id: string }>(key: string, official: T[]) {
   try {
@@ -20,4 +21,4 @@ function mergeOfficial<T extends { id: string }>(key: string, official: T[]) {
 }
 
 mergeOfficial('fu-items', [...officialWeapons, ...officialCoreRareWeapons, ...officialAtlasRareWeapons, ...officialOtherItems])
-mergeOfficial('fu-monsters', [...officialMonsters, ...officialCoreBestiaryRemaining, ...officialHighFantasyMonsters, ...officialNaturalFantasyMonsters, ...officialTechnoFantasyMonsters])
+mergeOfficial('fu-monsters', [...officialMonsters, ...officialCoreBestiaryRemaining, ...officialHighFantasyMonsters, ...officialNaturalFantasyMonsters, ...officialTechnoFantasyMonsters, ...officialTechnoFantasySupplement])
