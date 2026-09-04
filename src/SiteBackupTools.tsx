@@ -21,6 +21,7 @@ const SETTINGS_KEYS = [
   'fu-db-saved-views',
   'fu-db-selection',
   'fu-db-recent',
+  'fu-db-recent-native',
   'fu-db-advanced-search',
   'fu-monster-profile-filters',
   'fu-item-catalog-type',
