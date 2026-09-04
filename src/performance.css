@@ -1,0 +1,16 @@
+.monsterCard,
+.itemCard {
+  content-visibility: auto;
+  contain-intrinsic-size: 520px;
+  contain: layout paint style;
+}
+
+.grid {
+  align-items: start;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: auto;
+  }
+}
