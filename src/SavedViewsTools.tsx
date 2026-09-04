@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import './savedViewsTools.css'
 
@@ -53,12 +53,16 @@ function restore(view: SavedView) {
 }
 
 export default function SavedViewsTools() {
+  const [target, setTarget] = useState<HTMLElement | null>(null)
   const [views, setViews] = useState<SavedView[]>(readViews)
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
-  const target = document.querySelector<HTMLElement>('.shell > header')
   const kind = activeKind()
   const matching = useMemo(() => views.filter(view => view.kind === kind), [views, kind])
+
+  useEffect(() => {
+    setTarget(document.querySelector<HTMLElement>('.shell > header'))
+  }, [])
 
   if (!target) return null
 
