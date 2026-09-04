@@ -25,6 +25,19 @@ function storageKey(kind: Kind) {
   return kind === 'monster' ? 'fu-monsters' : 'fu-items'
 }
 
+function loadRecord(kind: Kind, id: string) {
+  try {
+    const records = JSON.parse(localStorage.getItem(storageKey(kind)) || '[]')
+    return Array.isArray(records) ? records.find(record => record?.id === id) || null : null
+  } catch {
+    return null
+  }
+}
+
+function cardStillExists(id: string) {
+  return Array.from(document.querySelectorAll<HTMLElement>('[data-db-record-id]')).some(card => card.dataset.dbRecordId === id)
+}
+
 export default function DatabaseUndoTools() {
   useEffect(() => {
     const apply = () => {
@@ -50,6 +63,24 @@ export default function DatabaseUndoTools() {
       })
     }
 
+    const captureDelete = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      const button = target.closest<HTMLButtonElement>('.monsterCard .danger, .itemCard .danger')
+      if (!button || button.textContent?.trim() !== 'Delete') return
+      const card = button.closest<HTMLElement>('.monsterCard, .itemCard')
+      const id = card?.dataset.dbRecordId
+      const kind = card?.dataset.dbRecordKind as Kind | undefined
+      if (!id || (kind !== 'monster' && kind !== 'item')) return
+      const record = loadRecord(kind, id)
+      if (!record || record.source === 'Official') return
+
+      window.setTimeout(() => {
+        if (cardStillExists(id)) return
+        localStorage.setItem(KEY, JSON.stringify({ kind, record, deletedAt: new Date().toISOString() } satisfies DeletedSnapshot))
+        apply()
+      }, 120)
+    }
+
     const onClick = (event: MouseEvent) => {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-db-undo-delete]')
       if (!button) return
@@ -73,10 +104,12 @@ export default function DatabaseUndoTools() {
     apply()
     const observer = new MutationObserver(() => requestAnimationFrame(apply))
     observer.observe(document.body, { childList: true, subtree: true })
+    document.addEventListener('click', captureDelete, true)
     document.addEventListener('click', onClick)
     window.addEventListener('storage', apply)
     return () => {
       observer.disconnect()
+      document.removeEventListener('click', captureDelete, true)
       document.removeEventListener('click', onClick)
       window.removeEventListener('storage', apply)
     }
