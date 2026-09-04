@@ -32,14 +32,24 @@ function readRecords(kind: Kind): any[] {
 }
 
 function kindForSection(section: HTMLElement): Kind | null {
-  if (section.querySelector('.monsterCard')) return 'monster'
-  if (section.querySelector('.itemCard')) return 'item'
+  if (section.querySelector('[data-db-record-kind="monster"]') || section.querySelector('input[placeholder^="Search monsters"]')) return 'monster'
+  if (section.querySelector('[data-db-record-kind="item"]') || section.querySelector('input[placeholder^="Search items"]')) return 'item'
   return null
 }
 
 function selectedRecords(kind: Kind, ids: string[]) {
   const byId = new Map(readRecords(kind).map(record => [record?.id, record]))
   return ids.map(id => byId.get(id)).filter(Boolean)
+}
+
+function visibleRecordIds(section: HTMLElement, kind: Kind) {
+  return Array.from(section.querySelectorAll<HTMLElement>(`[data-db-record-kind="${kind}"][data-db-record-id]`))
+    .filter(card => {
+      const style = getComputedStyle(card)
+      return style.display !== 'none' && style.visibility !== 'hidden' && !card.classList.contains('dbHiddenByFavorite')
+    })
+    .map(card => card.dataset.dbRecordId)
+    .filter((id): id is string => !!id)
 }
 
 function downloadJson(filename: string, data: unknown) {
@@ -115,13 +125,16 @@ export default function DatabaseSelectionTools() {
         }
         const selected = selectedRecords(kind, cleaned)
         const customCount = selected.filter(record => record?.source !== 'Official').length
-        const signature = `${selected.length}|${customCount}|${selected.map(record => record.id).join(',')}`
+        const visibleCount = visibleRecordIds(section, kind).length
+        const signature = `${selected.length}|${customCount}|${visibleCount}|${selected.map(record => record.id).join(',')}`
         if (bar.dataset.signature !== signature) {
           bar.dataset.signature = signature
           bar.innerHTML = `
             <span><strong>${selected.length}</strong> selected${customCount ? ` · ${customCount} custom` : ''}</span>
+            <button type="button" data-db-selection-visible ${visibleCount ? '' : 'disabled'}>Select visible (${visibleCount})</button>
             <button type="button" data-db-selection-copy ${selected.length ? '' : 'disabled'}>Copy names</button>
             <button type="button" data-db-selection-export ${selected.length ? '' : 'disabled'}>Export selected</button>
+            <button type="button" data-db-selection-print ${selected.length ? '' : 'disabled'}>Print selected</button>
             <button type="button" data-db-selection-favorite ${selected.length ? '' : 'disabled'}>Favorite selected</button>
             <button type="button" data-db-selection-delete ${customCount ? '' : 'disabled'}>Delete selected custom</button>
             <button type="button" data-db-selection-clear ${selected.length ? '' : 'disabled'}>Clear</button>`
@@ -150,9 +163,17 @@ export default function DatabaseSelectionTools() {
       const bar = target.closest<HTMLElement>('.dbSelectionBar')
       if (!bar) return
       const kind = bar.dataset.dbSelectionKind as Kind | undefined
-      if (!kind) return
+      const section = bar.closest<HTMLElement>('section')
+      if (!kind || !section) return
       const selection = readSelection()
       const records = selectedRecords(kind, selection[kind])
+
+      if (target.closest('[data-db-selection-visible]')) {
+        selection[kind] = Array.from(new Set([...selection[kind], ...visibleRecordIds(section, kind)]))
+        writeSelection(selection)
+        apply()
+        return
+      }
 
       if (target.closest('[data-db-selection-copy]')) {
         void navigator.clipboard?.writeText(records.map(record => record.name).join('\n'))
@@ -168,6 +189,17 @@ export default function DatabaseSelectionTools() {
           exportedAt: new Date().toISOString(),
           records,
         })
+        return
+      }
+
+      if (target.closest('[data-db-selection-print]')) {
+        document.body.classList.add('dbPrintSelection')
+        const cleanup = () => {
+          document.body.classList.remove('dbPrintSelection')
+          window.removeEventListener('afterprint', cleanup)
+        }
+        window.addEventListener('afterprint', cleanup)
+        window.print()
         return
       }
 
@@ -201,7 +233,7 @@ export default function DatabaseSelectionTools() {
 
     apply()
     const observer = new MutationObserver(() => requestAnimationFrame(apply))
-    observer.observe(document.body, { childList: true, subtree: true })
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] })
     document.addEventListener('click', onClick)
     return () => {
       observer.disconnect()
