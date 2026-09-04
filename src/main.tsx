@@ -12,6 +12,7 @@ import PwaTools from './PwaTools'
 import { ensureOfficialData } from './officialBootstrap'
 import { migrateInterfaceStorage } from './storageMigrations'
 import './styles.css'
+import './aestraRegionalTheme.css'
 import './performance.css'
 import './nativePagination.css'
 
