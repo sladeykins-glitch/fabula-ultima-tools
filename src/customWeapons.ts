@@ -14,15 +14,44 @@ const nonPhysical: DamageType[] = ['air','bolt','dark','earth','fire','ice','lig
 const prefixes = ['Aether','Astral','Blazing','Celestial','Crimson','Dragon','Eclipse','Gilded','Moon','Runic','Star','Tempest']
 const nounsByCategory: Record<string, string[]> = {
   Arcane: ['Focus','Codex','Scepter','Grimoire'],
-  Bow: ['Arc','Longshot','Windbow','Repeater'],
+  Bow: ['Arc','Longbow','Windbow','Repeater'],
   Brawling: ['Fist','Knuckle','Claw','Gauntlet'],
   Dagger: ['Needle','Fang','Edge','Knife'],
-  Firearm: ['Shot','Pistol','Handcannon','Revolver'],
-  Flail: ['Whip','Chain','Morningstar','Lash'],
+  Firearm: ['Pistol','Handcannon','Revolver','Carbine'],
+  Flail: ['Flail','Chain','Morningstar','Lash'],
   Heavy: ['Breaker','Maul','Hammer','Reaver'],
   Spear: ['Pike','Lance','Glaive','Spear'],
   Sword: ['Blade','Edge','Sabre','Sword'],
   Thrown: ['Star','Disc','Needle','Chakram'],
+}
+
+type Range = 'Melee'|'Ranged'
+type Accuracy = 'DEX + INS'|'DEX + MIG'
+
+const categoryRanges: Record<string, readonly Range[]> = {
+  Arcane: ['Melee','Ranged'],
+  Bow: ['Ranged'],
+  Brawling: ['Melee'],
+  Dagger: ['Melee','Ranged'],
+  Firearm: ['Ranged'],
+  Flail: ['Melee'],
+  Heavy: ['Melee'],
+  Spear: ['Melee'],
+  Sword: ['Melee'],
+  Thrown: ['Ranged'],
+}
+
+const categoryAccuracy: Record<string, readonly Accuracy[]> = {
+  Arcane: ['DEX + INS','DEX + INS','DEX + MIG'],
+  Bow: ['DEX + INS','DEX + INS','DEX + MIG'],
+  Brawling: ['DEX + MIG','DEX + MIG','DEX + INS'],
+  Dagger: ['DEX + INS','DEX + MIG'],
+  Firearm: ['DEX + INS','DEX + INS','DEX + MIG'],
+  Flail: ['DEX + MIG','DEX + MIG','DEX + INS'],
+  Heavy: ['DEX + MIG'],
+  Spear: ['DEX + MIG','DEX + MIG','DEX + INS'],
+  Sword: ['DEX + MIG','DEX + INS'],
+  Thrown: ['DEX + INS','DEX + INS','DEX + MIG'],
 }
 
 function pick<T>(values: readonly T[]): T {
@@ -33,19 +62,28 @@ function shuffle<T>(values: readonly T[]): T[] {
   return [...values].sort(() => Math.random() - 0.5)
 }
 
-function weightedCustomizationPool(category: string, range: 'Melee'|'Ranged', singles: CustomWeaponCustomization[]) {
+function rangeForCategory(category:string):Range {
+  return pick(categoryRanges[category] || ['Melee'])
+}
+
+function accuracyForCategory(category:string):Accuracy {
+  return pick(categoryAccuracy[category] || ['DEX + MIG'])
+}
+
+function weightedCustomizationPool(category: string, range: Range, singles: CustomWeaponCustomization[]) {
   const preferred: CustomWeaponCustomization[] = []
 
   if (['Bow','Firearm','Thrown','Dagger'].includes(category) || range === 'Ranged') preferred.push('Accurate','Accurate')
   if (['Heavy','Spear','Sword','Flail','Brawling'].includes(category) && range === 'Melee') preferred.push('Powerful','Defense Boost')
   if (['Arcane','Dagger'].includes(category)) preferred.push('Elemental','Accurate')
   if (['Sword','Spear','Brawling'].includes(category)) preferred.push('Defense Boost')
+  if (category === 'Arcane') preferred.push('Magic Defense Boost','Elemental')
   preferred.push('Elemental')
 
   return [...singles, ...preferred.filter(c => singles.includes(c))]
 }
 
-function buildCustomizationSet(category: string, range: 'Melee'|'Ranged', allowMartial: boolean, allowTransforming: boolean): CustomWeaponCustomization[] {
+function buildCustomizationSet(category: string, range: Range, allowMartial: boolean, allowTransforming: boolean): CustomWeaponCustomization[] {
   const singles: CustomWeaponCustomization[] = ['Accurate','Defense Boost','Elemental']
   if (allowMartial) {
     singles.push('Magic Defense Boost')
@@ -54,7 +92,8 @@ function buildCustomizationSet(category: string, range: 'Melee'|'Ranged', allowM
   if (allowTransforming) singles.push('Transforming')
 
   // Quick is martial, counts as two slots, and cannot coexist with Powerful.
-  if (allowMartial && Math.random() < 0.22) {
+  const quickChance = ['Dagger','Bow','Firearm','Thrown','Brawling'].includes(category) ? 0.28 : 0.14
+  if (allowMartial && Math.random() < quickChance) {
     const partnerPool = weightedCustomizationPool(category, range, singles.filter(c => c !== 'Powerful'))
     return ['Quick', pick(partnerPool)]
   }
@@ -75,10 +114,10 @@ function forceTransforming(set: CustomWeaponCustomization[]): CustomWeaponCustom
   const copy = [...set]
   const replaceIndex = copy.includes('Quick') ? 1 : Math.max(0, copy.length - 1)
   copy[replaceIndex] = 'Transforming'
-  return copy
+  return [...new Set(copy)] as CustomWeaponCustomization[]
 }
 
-function applyForm(category: string, range: 'Melee'|'Ranged', accuracy: 'DEX + INS'|'DEX + MIG', customizations: CustomWeaponCustomization[], preferredDamageType: DamageType|'random') {
+function applyForm(category: string, range: Range, accuracy: Accuracy, customizations: CustomWeaponCustomization[], preferredDamageType: DamageType|'random') {
   let accuracyBonus = 0
   let damage = 5
   let damageType: DamageType = 'physical'
@@ -110,21 +149,18 @@ function applyForm(category: string, range: 'Melee'|'Ranged', accuracy: 'DEX + I
   return { category, range, accuracy, accuracyBonus, damage, damageType, martial, effects }
 }
 
-function chooseDistinctSecondForm(firstCategory: string, firstRange: 'Melee'|'Ranged', firstAccuracy: 'DEX + INS'|'DEX + MIG') {
-  let category = pick(categories)
-  let range = pick(['Melee','Ranged'] as const)
-  let accuracy = pick(['DEX + INS','DEX + MIG'] as const)
-
-  for (let tries = 0; tries < 12 && category === firstCategory && range === firstRange && accuracy === firstAccuracy; tries++) {
-    category = pick(categories)
-    range = pick(['Melee','Ranged'] as const)
-    accuracy = pick(['DEX + INS','DEX + MIG'] as const)
+function chooseDistinctSecondForm(firstCategory: string, firstRange: Range, firstAccuracy: Accuracy) {
+  const preferredCategories = categories.filter(category => {
+    const ranges = categoryRanges[category]
+    return category !== firstCategory && (ranges.includes(firstRange === 'Melee' ? 'Ranged' : 'Melee') || Math.random() < 0.35)
+  })
+  const category = pick(preferredCategories.length ? preferredCategories : categories.filter(c => c !== firstCategory))
+  const range = rangeForCategory(category)
+  let accuracy = accuracyForCategory(category)
+  if (category === firstCategory && range === firstRange && accuracy === firstAccuracy) {
+    const alternatives = (categoryAccuracy[category] || []).filter(value => value !== firstAccuracy)
+    if (alternatives.length) accuracy = pick(alternatives)
   }
-
-  // Prefer at least one obvious battlefield difference between forms.
-  if (range === firstRange && Math.random() < 0.7) range = firstRange === 'Melee' ? 'Ranged' : 'Melee'
-  if (category === firstCategory && Math.random() < 0.7) category = pick(categories.filter(c => c !== firstCategory))
-
   return { category, range, accuracy }
 }
 
@@ -143,8 +179,8 @@ export function generateCustomWeapon(options: {
   const preferred = options.preferredDamageType || 'random'
 
   const category = pick(categories)
-  const range = pick(['Melee','Ranged'] as const)
-  const accuracy = pick(['DEX + INS','DEX + MIG'] as const)
+  const range = rangeForCategory(category)
+  const accuracy = accuracyForCategory(category)
   const customizations = buildCustomizationSet(category, range, allowMartial, allowTransforming)
   const form1 = applyForm(category, range, accuracy, customizations, preferred)
 
@@ -155,6 +191,7 @@ export function generateCustomWeapon(options: {
     'Always two-handed and occupies both hand slots.',
     `Category: ${category}; ${range}; Accuracy [${accuracy}]; base damage HR + 5 physical.`,
     `Customizations (${customizations.includes('Quick') ? 'Quick uses two of the three slots' : 'three one-slot customizations'}): ${customizations.join(', ')}`,
+    `Coherence: ${category} determines its normal ${range.toLowerCase()} profile and biases its accuracy/customization package.`,
   ]
   if (transforming) breakdown.push('Transforming: +100z; the second form costs no additional zenit and any later rare Quality/modification applies to both forms.')
 
