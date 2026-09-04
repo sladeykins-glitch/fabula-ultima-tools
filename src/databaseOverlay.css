@@ -8,6 +8,9 @@
 .dbModalHeader h2 { margin: 5px 0 0; }
 .dbClose, .dbModalActions button, .dbSectionHeader button { border: 1px solid #334155; background: #111827; color: #e5e7eb; border-radius: 10px; padding: 9px 11px; }
 .dbOfficialNotice { padding: 10px 12px; border: 1px solid #4c4a73; border-radius: 10px; background: rgba(49,46,129,.2); color: #c7d2fe; }
+.dbValidationBanner { margin: 0 0 14px; padding: 11px 13px; border: 1px solid #b45309; border-radius: 10px; background: rgba(120,53,15,.22); color: #fde68a; }
+.dbValidationBanner strong { display:block; margin-bottom:5px; }
+.dbValidationBanner ul { margin:0; padding-left:20px; }
 .dbEditGrid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
 .dbEditGrid label, .dbCompactGrid label, .dbAffinityGrid label { display: grid; gap: 6px; color: #cbd5e1; font-size: .9rem; }
 .dbEditGrid input, .dbEditGrid select, .dbEditGrid textarea, .dbCompactGrid select, .dbAffinityGrid select, .dbArrayRow input, .dbArrayRow select, .dbArrayRow textarea { width: 100%; border: 1px solid #334155; border-radius: 10px; padding: 10px 11px; background: #0b1220; color: #f8fafc; font: inherit; }
