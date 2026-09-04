@@ -93,13 +93,16 @@ old="import { createMonsterVariant, GeneratorPowerIntent, MonsterVariant, monste
 new="import { applyOfficialMonsterStructure, chooseOfficialInspiredItemCandidate, createMonsterVariant, GeneratorPowerIntent, MonsterVariant, monsterCoherenceSummary, officialInspiredItemBudget, officialInspiredMonsterSettings, powerAdjustedItemBudget, powerAdjustedMonsterSettings } from './generatorEvolution'"
 if old in s:s=s.replace(old,new,1)
 elif 'applyOfficialMonsterStructure' not in s:raise SystemExit('generatorEvolution import not found')
+# Give the non-Official branches the same structural shape so TypeScript can narrow safely.
+s=s.replace(":{style:hintedStyle,complexity:adjusted.complexity,note:''};let chassis=",":{style:hintedStyle,complexity:adjusted.complexity,attackCount:adjusted.complexity==='Simple'?1:adjusted.complexity==='Standard'?2:3,skillCount:99,spellCount:99,affinityCount:99,sampleCount:0,note:''};let chassis=",1)
+s=s.replace(":{maxCost:budget,note:''};budget=pattern.maxCost;",":{maxCost:budget,sampleCount:0,martialRate:0.5,qualityRate:0.5,note:''};budget=pattern.maxCost;",1)
 old="let monster=applyMonsterTheme(generateMonster({level,rank:adjusted.rank,soldierEquivalent:adjusted.soldierEquivalent,species:sp,complexity:pattern.complexity,combatStyle:pattern.style}),theme==='Auto'?undefined:theme);monster=applyMonsterSetting(monster);"
 new="let chassis=generateMonster({level,rank:adjusted.rank,soldierEquivalent:adjusted.soldierEquivalent,species:sp,complexity:pattern.complexity,combatStyle:pattern.style});if(inspiration==='Official Pattern')chassis=applyOfficialMonsterStructure(chassis,pattern);let monster=applyMonsterTheme(chassis,theme==='Auto'?undefined:theme);monster=applyMonsterSetting(monster);"
-if old not in s: raise SystemExit('monster generation needle missing')
-s=s.replace(old,new,1)
+if old in s:s=s.replace(old,new,1)
+elif 'applyOfficialMonsterStructure(chassis,pattern)' not in s:raise SystemExit('monster generation needle missing')
 old="let item:AppItem=type==='Weapon'&&weaponMethod==='Atlas Custom'?generateCustomWeapon({allowMartial,allowTransforming:powerIntent==='Legendary'?true:allowTransforming,preferredDamageType:damageType}):generateItem({type,maxCost:budget,allowMartial,preferredDamageType:damageType});item=applyItemTheme(item,itemTheme==='Auto'?undefined:itemTheme);"
 new="const makeCandidate=():AppItem=>type==='Weapon'&&weaponMethod==='Atlas Custom'?generateCustomWeapon({allowMartial,allowTransforming:powerIntent==='Legendary'?true:allowTransforming,preferredDamageType:damageType}):generateItem({type,maxCost:budget,allowMartial,preferredDamageType:damageType});let item:AppItem=inspiration==='Official Pattern'?chooseOfficialInspiredItemCandidate(Array.from({length:6},()=>makeCandidate()),pattern):makeCandidate();item=applyItemTheme(item,itemTheme==='Auto'?undefined:itemTheme);"
-if old not in s: raise SystemExit('item generation needle missing')
-s=s.replace(old,new,1)
+if old in s:s=s.replace(old,new,1)
+elif 'chooseOfficialInspiredItemCandidate' not in s:raise SystemExit('item generation needle missing')
 s=s.replace('Official Pattern centers that budget on matching official equipment already in the database without copying item text.','Official Pattern uses matching official equipment to nudge the budget and rank several fresh candidates by common martial/category/range/handedness/quality structure without copying item text.',1)
 p.write_text(s)
