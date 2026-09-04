@@ -14,7 +14,7 @@ needle="<label>Origin<select value={origin} onChange={e=>setOrigin(e.target.valu
 if needle in s:
  s=s.replace(needle,"{nation!=='Aestra'&&<label>Origin<select value={origin} onChange={e=>setOrigin(e.target.value as AestraOrigin)}>{aestraOrigins(nation as AestraNation).map(o=><option key={o}>{o}</option>)}</select></label>}{nation==='Aestra'&&<><label>Environment<select value={environment} onChange={e=>setEnvironment(e.target.value as AestraEnvironment)}>{aestraEnvironments.map(x=><option key={x}>{x}</option>)}</select></label><label>Exposure<select value={exposure} onChange={e=>setExposure(e.target.value as AestraExposure)}>{aestraExposures.map(x=><option key={x}>{x}</option>)}</select></label><label>Origin<select value={wildOrigin} onChange={e=>setWildOrigin(e.target.value as AestraWildOrigin)}>{aestraWildOrigins.map(x=><option key={x}>{x}</option>)}</select></label><p className=\"muted smallText\">Aestra here means lands outside direct national control. Environment changes the ecology and combat pattern; Exposure changes how strange or poorly understood it is, not simply its level.</p></>}")
 else: raise SystemExit('origin UI needle missing')
-# hide national-only crystal/depth controls for uncontrolled Aestra
 s=s.replace("<label>Crystal influence<select", "{nation!=='Aestra'&&<label>Crystal influence<select")
 s=s.replace("</select></label>{nation==='Valdoria'", "</select></label>}{nation==='Valdoria'")
 p.write_text(s)
+# trigger
