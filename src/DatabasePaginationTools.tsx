@@ -33,6 +33,7 @@ function isFilteredOut(card: HTMLElement) {
   return card.classList.contains('dbHiddenByFavorite')
     || card.classList.contains('dbHiddenByAdvanced')
     || card.classList.contains('dbHiddenByTaxonomy')
+    || card.classList.contains('dbHiddenByMonsterInfo')
 }
 
 function eligibleCards(section: HTMLElement) {
