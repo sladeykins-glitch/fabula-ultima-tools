@@ -1,0 +1,7 @@
+.dbRecentBar { display:flex; flex-wrap:wrap; align-items:center; gap:7px; margin:0 0 12px; padding:8px 10px; border:1px solid #2a374a; border-radius:12px; background:rgba(15,23,42,.42); }
+.dbRecentBar > span { color:#94a3b8; font-size:.82rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; }
+.dbRecentBar em { color:#64748b; font-size:.84rem; }
+.dbRecentBar button { border:1px solid #334155; background:#111827; color:#cbd5e1; border-radius:999px; padding:6px 9px; font-size:.82rem; }
+.dbRecentBar button:hover { border-color:#818cf8; color:#eef2ff; }
+.dbRecentBar .dbRecentClear { margin-left:auto; border-radius:9px; color:#94a3b8; }
+@media (max-width:650px) { .dbRecentBar .dbRecentClear { margin-left:0; } }
