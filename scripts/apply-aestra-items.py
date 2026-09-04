@@ -33,3 +33,4 @@ if needle not in s: raise SystemExit('item UI insertion needle missing')
 s=s.replace(needle,insert)
 
 p.write_text(s)
+# migration trigger 1
