@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import './siteBackupTools.css'
 
-type Kind = 'monster' | 'item'
-
 type SiteBackup = {
   format: 'fabula-ultima-tools-site-backup'
   version: 1
@@ -24,6 +22,8 @@ const SETTINGS_KEYS = [
   'fu-monster-filters',
   'fu-item-filters',
   'fu-monster-search',
+  'fu-monster-generator-settings',
+  'fu-item-generator-settings',
 ]
 
 function readArray(key: string): any[] {
