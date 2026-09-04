@@ -21,6 +21,8 @@ const ACTIVE_TAB_KEY = 'fu-active-tab'
 const MONSTER_FILTERS_KEY = 'fu-monster-filters'
 const ITEM_FILTERS_KEY = 'fu-item-filters'
 const MONSTER_SEARCH_KEY = 'fu-monster-search'
+const MONSTER_GENERATOR_KEY = 'fu-monster-generator-settings'
+const ITEM_GENERATOR_KEY = 'fu-item-generator-settings'
 
 function readStored<T>(key: string, fallback: T): T {
   try {
@@ -208,13 +210,25 @@ function MonsterDatabase({ monsters, setMonsters, search, setSearch }: { monster
 }
 
 function MonsterGenerator({ onSave }: { onSave: (m:Monster)=>void }) {
-  const [level, setLevel] = useState(10)
-  const [rank, setRank] = useState<Rank>('Soldier')
-  const [soldierEquivalent, setSoldierEquivalent] = useState(3)
-  const [sp, setSp] = useState<Species>('Monster')
-  const [complexity, setComplexity] = useState<'Simple'|'Standard'|'Crunchy'>('Standard')
-  const [combatStyle, setCombatStyle] = useState<CombatStyle>('Mixed')
+  const initial = useMemo(() => readStored(MONSTER_GENERATOR_KEY, {
+    level: 10,
+    rank: 'Soldier' as Rank,
+    soldierEquivalent: 3,
+    sp: 'Monster' as Species,
+    complexity: 'Standard' as 'Simple'|'Standard'|'Crunchy',
+    combatStyle: 'Mixed' as CombatStyle,
+  }), [])
+  const [level, setLevel] = useState(initial.level)
+  const [rank, setRank] = useState<Rank>(initial.rank)
+  const [soldierEquivalent, setSoldierEquivalent] = useState(initial.soldierEquivalent)
+  const [sp, setSp] = useState<Species>(initial.sp)
+  const [complexity, setComplexity] = useState<'Simple'|'Standard'|'Crunchy'>(initial.complexity)
+  const [combatStyle, setCombatStyle] = useState<CombatStyle>(initial.combatStyle)
   const [result, setResult] = useState<Monster|null>(null)
+
+  useEffect(() => {
+    localStorage.setItem(MONSTER_GENERATOR_KEY, JSON.stringify({ level, rank, soldierEquivalent, sp, complexity, combatStyle }))
+  }, [level, rank, soldierEquivalent, sp, complexity, combatStyle])
 
   const make = () => setResult(generateMonster({ level, rank, soldierEquivalent, species: sp, complexity, combatStyle }))
 
@@ -363,17 +377,36 @@ function ItemCard({ item, onDelete, database = false }: { item: AppItem; onDelet
 }
 
 function ItemGenerator({ onSave }: { onSave: (item:AppItem)=>void }) {
-  const [type, setType] = useState<ItemType>('Weapon')
-  const [weaponMethod, setWeaponMethod] = useState<'Core Rare'|'Atlas Custom'>('Core Rare')
-  const [maxCost, setMaxCost] = useState(1500)
-  const [allowMartial, setAllowMartial] = useState(true)
-  const [allowTransforming, setAllowTransforming] = useState(true)
-  const [damageType, setDamageType] = useState<DamageType|'random'>('random')
-  const [addMaterial, setAddMaterial] = useState(false)
-  const [materialNature, setMaterialNature] = useState<MaterialNature|'Random'>('Random')
-  const [descriptorMode, setDescriptorMode] = useState<'Elemental'|'Functional'|'Random'>('Random')
-  const [materialFunction, setMaterialFunction] = useState<MaterialFunction|'Random'>('Random')
+  const initial = useMemo(() => readStored(ITEM_GENERATOR_KEY, {
+    type: 'Weapon' as ItemType,
+    weaponMethod: 'Core Rare' as 'Core Rare'|'Atlas Custom',
+    maxCost: 1500,
+    allowMartial: true,
+    allowTransforming: true,
+    damageType: 'random' as DamageType|'random',
+    addMaterial: false,
+    materialNature: 'Random' as MaterialNature|'Random',
+    descriptorMode: 'Random' as 'Elemental'|'Functional'|'Random',
+    materialFunction: 'Random' as MaterialFunction|'Random',
+  }), [])
+  const [type, setType] = useState<ItemType>(initial.type)
+  const [weaponMethod, setWeaponMethod] = useState<'Core Rare'|'Atlas Custom'>(initial.weaponMethod)
+  const [maxCost, setMaxCost] = useState(initial.maxCost)
+  const [allowMartial, setAllowMartial] = useState(initial.allowMartial)
+  const [allowTransforming, setAllowTransforming] = useState(initial.allowTransforming)
+  const [damageType, setDamageType] = useState<DamageType|'random'>(initial.damageType)
+  const [addMaterial, setAddMaterial] = useState(initial.addMaterial)
+  const [materialNature, setMaterialNature] = useState<MaterialNature|'Random'>(initial.materialNature)
+  const [descriptorMode, setDescriptorMode] = useState<'Elemental'|'Functional'|'Random'>(initial.descriptorMode)
+  const [materialFunction, setMaterialFunction] = useState<MaterialFunction|'Random'>(initial.materialFunction)
   const [result, setResult] = useState<AppItem|null>(null)
+
+  useEffect(() => {
+    localStorage.setItem(ITEM_GENERATOR_KEY, JSON.stringify({
+      type, weaponMethod, maxCost, allowMartial, allowTransforming, damageType,
+      addMaterial, materialNature, descriptorMode, materialFunction,
+    }))
+  }, [type, weaponMethod, maxCost, allowMartial, allowTransforming, damageType, addMaterial, materialNature, descriptorMode, materialFunction])
 
   const generate = () => {
     let item: AppItem
