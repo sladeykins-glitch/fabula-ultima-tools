@@ -44,6 +44,7 @@ const corrections: Record<string, Correction> = {
   },
 
   // Core Rulebook v1.02 — primary score corrections discovered in the Bestiary audit.
+  'official-core-spikeflake': { patch: { magicDefense: 12 } },
   'official-core-cragboar': { patch: { magicDefense: 6 } },
   'official-core-brigand': { patch: { defense: 9 } },
   'official-core-cockatrice': { patch: { magicDefense: 12 } },
