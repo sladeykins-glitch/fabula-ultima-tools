@@ -22,6 +22,7 @@ const SETTINGS_KEYS = [
   'fu-db-selection',
   'fu-db-recent',
   'fu-db-advanced-search',
+  'fu-monster-profile-filters',
   'fu-item-catalog-type',
   'fu-db-tools-open',
   'fu-active-tab',
