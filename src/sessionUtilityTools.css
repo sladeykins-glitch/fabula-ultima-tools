@@ -1,13 +1,16 @@
 .sessionUtilityTools {
   position: relative;
-  margin-left: auto;
+  margin-left: 0;
   display: flex;
   align-items: center;
 }
 
 .sessionUtilityTools > button {
   white-space: nowrap;
+  background:#111827;
+  color:#cbd5e1;
 }
+.sessionUtilityTools > button:hover { border-color:#818cf8; color:#eef2ff; }
 
 .recentMenu {
   position: absolute;
