@@ -1,6 +1,7 @@
-import type { CombatStyle, DamageType, Monster, MonsterSkill, Species } from './rules'
+import type { Affinity, CombatStyle, DamageType, Monster, MonsterAttack, MonsterSkill, MonsterSpell, Species } from './rules'
 
 export type MonsterTheme = 'Wild' | 'Infernal' | 'Arcane' | 'Industrial' | 'Floral' | 'Spectral' | 'Draconic' | 'Aquatic'
+export type MonsterRerollPart = 'name' | 'attacks' | 'skills' | 'spells' | 'affinities' | 'theme'
 
 type ThemeProfile = {
   nouns: string[]
@@ -32,6 +33,7 @@ const speciesDefaults: Record<Species, MonsterTheme[]> = {
 function pick<T>(values: readonly T[]) { return values[Math.floor(Math.random()*values.length)] }
 function unique<T>(values:T[]) { return [...new Set(values)] }
 function capital(value:string){ return value.charAt(0).toUpperCase()+value.slice(1) }
+function shuffled<T>(values: readonly T[]) { return [...values].sort(()=>Math.random()-0.5) }
 
 export function chooseMonsterTheme(species: Species, style: CombatStyle): MonsterTheme {
   const pool=[...speciesDefaults[species]]
@@ -80,9 +82,23 @@ function thematicUnique(style:CombatStyle, damage:DamageType, status:string, the
   return effects[style]
 }
 
+function championPhase(theme:MonsterTheme, style:CombatStyle, damage:DamageType, status:string) {
+  const phaseName:Record<MonsterTheme,string>={ Wild:'Blood Hunt', Infernal:'Open the Furnace', Arcane:'Second Pattern', Industrial:'Limit Release', Floral:'Second Bloom', Spectral:'Unquiet Ascension', Draconic:'Tyrant Unbound', Aquatic:'Abyssal Pressure' }
+  const styleEffect:Record<CombatStyle,string>={
+    Mixed:`Immediately choose one visible enemy; it suffers ${status}. Until the end of the conflict, the first ${damage}-damage effect this Champion uses each round gains multi (2).`,
+    Brute:`Immediately perform one basic attack. Until the end of the conflict, its ${damage} attacks deal 5 extra damage, or 10 extra damage against targets suffering ${status}.`,
+    Defender:`Immediately gain Resistance to ${damage}. Until the end of the conflict, the first time each round an ally is damaged, this Champion may become the target instead and the attacker suffers ${status}.`,
+    Controller:`Immediately inflict ${status} on one visible enemy. Until the end of the conflict, whenever this Champion inflicts ${status}, it may inflict slow or weak on a second visible enemy.`,
+    Spellcaster:`Immediately recover 20 MP. Until the end of the conflict, its damaging spells become ${damage} damage, and the first spell each round against a target suffering ${status} deals 5 extra damage.`,
+    Assassin:`Immediately mark one visible enemy suffering ${status}, or inflict ${status} on one enemy if none qualify. Until the end of the conflict, attacks against the marked target gain +2 Accuracy and deal 5 extra damage.`,
+    Support:`Immediately choose one ally; it recovers 10 HP and gains Resistance to ${damage}. Until the end of the conflict, the first ally this Champion aids each round also removes one basic status effect.`,
+  }
+  return { name:`Champion Phase — ${phaseName[theme]}`, summary:`When this Champion first enters Crisis: ${styleEffect[style]}` }
+}
+
 function rewriteSkills(skills:MonsterSkill[], style:CombatStyle, primary:DamageType, status:string, theme:MonsterTheme) {
   let specialAssigned=false
-  return skills.map(skill=>{
+  return skills.filter(skill=>!skill.name.startsWith('Champion Phase —')).map(skill=>{
     if(skill.name==='Crisis Effect') return {...skill,summary:thematicCrisis(style,primary,status)}
     if(skill.name==='Unique Action') return {...skill,summary:thematicUnique(style,primary,status,theme)}
     if(skill.name==='Special Attack' && !specialAssigned){
@@ -94,28 +110,112 @@ function rewriteSkills(skills:MonsterSkill[], style:CombatStyle, primary:DamageT
   })
 }
 
-export function applyMonsterTheme(monster: Monster, requested?: MonsterTheme): Monster {
-  const theme=requested || chooseMonsterTheme(monster.species, monster.combatStyle || 'Mixed')
-  const p=profiles[theme], style=monster.combatStyle||'Mixed'
-  const primary=pick(p.damage)
-  const secondaryChoices=p.damage.filter(x=>x!==primary)
-  const secondary=pick(secondaryChoices.length?secondaryChoices:p.damage)
-  const status=pick(p.status)
-  const attacks=(monster.attacks||[]).map((attack,index)=>({
+function themedAttacks(attacks:MonsterAttack[], p:ThemeProfile, primary:DamageType, secondary:DamageType, status:string) {
+  const words=shuffled(p.attackWords)
+  return attacks.map((attack,index)=>({
     ...attack,
-    name:p.attackWords[index%p.attackWords.length],
+    name:words[index%words.length],
     damageType:index===0 ? primary : secondary,
     effect:attack.effect ? attack.effect.replace(/inflicts (dazed|shaken|slow|weak|poisoned|enraged)/gi,`inflicts ${status}`).replace(/(physical|air|bolt|dark|earth|fire|ice|light|poison) damage/gi,`${index===0?primary:secondary} damage`) : undefined,
   }))
-  const spells=(monster.spells||[]).map((spell,index)=>({
+}
+
+function themedSpells(spells:MonsterSpell[], p:ThemeProfile, primary:DamageType, status:string) {
+  const words=shuffled(p.spellWords)
+  return spells.map((spell,index)=>({
     ...spell,
-    name: ['Breath','Cursed Breath','Curse','Curse XL','Area Status','Weaken'].includes(spell.name) ? p.spellWords[index%p.spellWords.length] : spell.name,
+    name: ['Breath','Cursed Breath','Curse','Curse XL','Area Status','Weaken',...p.spellWords].includes(spell.name) ? words[index%words.length] : spell.name,
     effect:spell.effect.replace(/\b(physical|air|bolt|dark|earth|fire|ice|light|poison) damage\b/gi,`${primary} damage`).replace(/suffers (dazed|shaken|slow|weak|poisoned|enraged)/gi,`suffers ${status}`),
   }))
-  const traits=unique([...p.traits.sort(()=>Math.random()-0.5).slice(0,3), ...(monster.traits||[]).slice(0,1)]).slice(0,4)
-  const skills=rewriteSkills(monster.skills||[],style,primary,status,theme)
+}
+
+function cleanThemeNotes(notes:string[]) {
+  return notes.filter(note=>!note.startsWith('Theme: ')&&!note.startsWith('Core gimmick: ')&&!note.startsWith('Champion phase: '))
+}
+
+function themeFromMonster(monster:Monster):MonsterTheme {
+  const note=(monster.notes||[]).find(value=>value.startsWith('Theme: '))
+  const match=note?.match(/^Theme: ([^.]+)/)
+  const candidate=match?.[1] as MonsterTheme | undefined
+  return candidate && candidate in profiles ? candidate : chooseMonsterTheme(monster.species,monster.combatStyle||'Mixed')
+}
+
+function gimmickFromMonster(monster:Monster, theme:MonsterTheme) {
+  const note=(monster.notes||[]).find(value=>value.startsWith('Core gimmick: ')) || ''
+  const match=note.match(/^Core gimmick: ([A-Za-z]+) damage sets up ([a-z]+)/)
+  const profile=profiles[theme]
+  const primary=(match?.[1]?.toLowerCase() as DamageType | undefined)
+  const status=match?.[2]
+  return {
+    primary: primary && profile.damage.includes(primary) ? primary : pick(profile.damage),
+    status: status && profile.status.includes(status) ? status : pick(profile.status),
+  }
+}
+
+function secondaryFor(profile:ThemeProfile, primary:DamageType) {
+  const choices=profile.damage.filter(type=>type!==primary)
+  return pick(choices.length?choices:profile.damage)
+}
+
+function thematicAffinities(monster:Monster, theme:MonsterTheme, primary:DamageType):Record<DamageType,Affinity> {
+  const next={...monster.affinities}
+  const protectedTypes=new Set<DamageType>()
+  if(monster.species==='Construct'){ protectedTypes.add('earth'); protectedTypes.add('poison') }
+  if(monster.species==='Elemental') protectedTypes.add('poison')
+  if(monster.species==='Undead'){ protectedTypes.add('dark'); protectedTypes.add('poison'); protectedTypes.add('light') }
+  if(monster.species==='Plant') for(const type of ['air','bolt','fire','ice'] as DamageType[]) if(next[type]==='Vulnerable') protectedTypes.add(type)
+
+  for(const type of Object.keys(next) as DamageType[]) {
+    if(!protectedTypes.has(type) && next[type] !== 'Absorb') next[type]='Normal'
+  }
+  if(!protectedTypes.has(primary)) next[primary]=Math.random()<0.22?'Immune':'Resistant'
+  const profile=profiles[theme]
+  const weaknessPool=(['air','bolt','dark','earth','fire','ice','light','poison'] as DamageType[]).filter(type=>!profile.damage.includes(type)&&!protectedTypes.has(type))
+  if(weaknessPool.length && Math.random()<0.7) next[pick(weaknessPool)]='Vulnerable'
+  return next
+}
+
+function finishTheme(monster:Monster, theme:MonsterTheme, primary:DamageType, status:string, options?:{name?:boolean;attacks?:boolean;skills?:boolean;spells?:boolean;traits?:boolean;affinities?:boolean}) {
+  const p=profiles[theme], style=monster.combatStyle||'Mixed', secondary=secondaryFor(p,primary)
+  const opts={name:true,attacks:true,skills:true,spells:true,traits:true,affinities:false,...options}
+  let skills=opts.skills ? rewriteSkills(monster.skills||[],style,primary,status,theme) : (monster.skills||[]).filter(skill=>!skill.name.startsWith('Champion Phase —'))
+  if(monster.rank==='Champion') skills=[...skills,championPhase(theme,style,primary,status)]
+  const baseNotes=cleanThemeNotes(monster.notes||[])
   const gimmick=`Core gimmick: ${capital(primary)} damage sets up ${status}; ${style.toLowerCase()} abilities are biased toward exploiting that setup.`
-  return { ...monster, name:speciesAwareName(monster.species,p), traits, attacks, spells, skills, notes:[`Theme: ${theme}. ${p.flavour}`,gimmick,...(monster.notes||[])] }
+  const phaseNote=monster.rank==='Champion' ? `Champion phase: ${theme} identity intensifies on first entering Crisis instead of introducing an unrelated mechanic.` : undefined
+  return {
+    ...monster,
+    name:opts.name ? speciesAwareName(monster.species,p) : monster.name,
+    traits:opts.traits ? unique([...shuffled(p.traits).slice(0,3), ...(monster.traits||[]).slice(0,1)]).slice(0,4) : monster.traits,
+    attacks:opts.attacks ? themedAttacks(monster.attacks||[],p,primary,secondary,status) : monster.attacks,
+    spells:opts.spells ? themedSpells(monster.spells||[],p,primary,status) : monster.spells,
+    skills,
+    affinities:opts.affinities ? thematicAffinities(monster,theme,primary) : monster.affinities,
+    notes:[`Theme: ${theme}. ${p.flavour}`,gimmick,...(phaseNote?[phaseNote]:[]),...baseNotes],
+  }
+}
+
+export function applyMonsterTheme(monster: Monster, requested?: MonsterTheme): Monster {
+  const theme=requested || chooseMonsterTheme(monster.species, monster.combatStyle || 'Mixed')
+  const p=profiles[theme]
+  const primary=pick(p.damage), status=pick(p.status)
+  return finishTheme(monster,theme,primary,status)
+}
+
+export function rerollMonsterPart(monster:Monster, part:MonsterRerollPart):Monster {
+  const currentTheme=themeFromMonster(monster)
+  if(part==='theme') {
+    const alternatives=monsterThemes.filter(theme=>theme!==currentTheme)
+    const nextTheme=pick(alternatives.length?alternatives:monsterThemes)
+    const p=profiles[nextTheme]
+    return finishTheme(monster,nextTheme,pick(p.damage),pick(p.status),{name:true,attacks:true,skills:true,spells:true,traits:true,affinities:false})
+  }
+  const {primary,status}=gimmickFromMonster(monster,currentTheme)
+  if(part==='name') return finishTheme(monster,currentTheme,primary,status,{name:true,attacks:false,skills:false,spells:false,traits:false,affinities:false})
+  if(part==='attacks') return finishTheme(monster,currentTheme,primary,status,{name:false,attacks:true,skills:false,spells:false,traits:false,affinities:false})
+  if(part==='skills') return finishTheme(monster,currentTheme,primary,pick(profiles[currentTheme].status),{name:false,attacks:false,skills:true,spells:false,traits:false,affinities:false})
+  if(part==='spells') return finishTheme(monster,currentTheme,primary,status,{name:false,attacks:false,skills:false,spells:true,traits:false,affinities:false})
+  return finishTheme(monster,currentTheme,pick(profiles[currentTheme].damage),pick(profiles[currentTheme].status),{name:false,attacks:false,skills:true,spells:false,traits:false,affinities:true})
 }
 
 export const monsterThemes = Object.keys(profiles) as MonsterTheme[]
