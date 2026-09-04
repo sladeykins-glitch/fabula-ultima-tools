@@ -14,6 +14,7 @@ import DatabaseUndoTools from './DatabaseUndoTools'
 import AccessibilityTools from './AccessibilityTools'
 import DatabasePresetTools from './DatabasePresetTools'
 import DatabaseSelectionTools from './DatabaseSelectionTools'
+import DatabaseCompareTools from './DatabaseCompareTools'
 import './styles.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -32,5 +33,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <AccessibilityTools />
     <DatabasePresetTools />
     <DatabaseSelectionTools />
+    <DatabaseCompareTools />
   </React.StrictMode>,
 )
