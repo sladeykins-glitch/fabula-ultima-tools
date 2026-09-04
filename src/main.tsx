@@ -5,6 +5,7 @@ import DatabaseOverlay from './DatabaseOverlay'
 import DatabaseBackupTools from './DatabaseBackupTools'
 import DatabaseBrowseTools from './DatabaseBrowseTools'
 import DatabasePaginationTools from './DatabasePaginationTools'
+import DatabaseSafetyTools from './DatabaseSafetyTools'
 import './styles.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -14,5 +15,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <DatabaseBackupTools />
     <DatabaseBrowseTools />
     <DatabasePaginationTools />
+    <DatabaseSafetyTools />
   </React.StrictMode>,
 )
