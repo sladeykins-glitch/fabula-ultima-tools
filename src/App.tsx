@@ -7,6 +7,7 @@ import { GeneratedMaterial, generateMaterial, MaterialFunction, MaterialNature }
 type Tab = 'Monster Database' | 'Monster Generator' | 'Item Database' | 'Item Generator'
 type AppItem = GeneratedItem & { material?: GeneratedMaterial; origin?: string }
 type ItemSort = 'Newest' | 'Name' | 'Cost Low' | 'Cost High'
+type MonsterSort = 'Newest' | 'Name' | 'Level Low' | 'Level High'
 
 const species: Species[] = ['Beast','Construct','Demon','Elemental','Humanoid','Monster','Plant','Undead']
 const ranks: Rank[] = ['Soldier','Elite','Champion']
@@ -87,18 +88,49 @@ function MonsterCard({ monster, onDelete }: { monster: Monster; onDelete?:()=>vo
 }
 
 function MonsterDatabase({ monsters, setMonsters, search, setSearch }: { monsters: Monster[]; setMonsters: React.Dispatch<React.SetStateAction<Monster[]>>; search: string; setSearch: (v:string)=>void }) {
-  const filtered = useMemo(() => monsters.filter(m => {
-    const skills = (m.skills || []).map(s => `${s.name} ${s.summary}`).join(' ')
-    const spells = (m.spells || []).map(s => `${s.name} ${s.effect}`).join(' ')
-    const attacks = (m.attacks || []).map(a => `${a.name} ${a.damageType} ${a.effect || ''}`).join(' ')
-    return `${m.name} ${m.species} ${m.rank} ${m.combatStyle || ''} ${m.traits.join(' ')} ${skills} ${spells} ${attacks}`.toLowerCase().includes(search.toLowerCase())
-  }), [monsters, search])
+  const [rank, setRank] = useState<'All'|Rank>('All')
+  const [speciesFilter, setSpeciesFilter] = useState<'All'|Species>('All')
+  const [styleFilter, setStyleFilter] = useState<'All'|CombatStyle>('All')
+  const [sort, setSort] = useState<MonsterSort>('Newest')
+
+  const filtered = useMemo(() => {
+    const matches = monsters.filter(m => {
+      const skills = (m.skills || []).map(s => `${s.name} ${s.summary}`).join(' ')
+      const spells = (m.spells || []).map(s => `${s.name} ${s.effect}`).join(' ')
+      const attacks = (m.attacks || []).map(a => `${a.name} ${a.damageType} ${a.effect || ''}`).join(' ')
+      const haystack = `${m.name} ${m.species} ${m.rank} ${m.combatStyle || ''} ${m.traits.join(' ')} ${skills} ${spells} ${attacks}`.toLowerCase()
+      return haystack.includes(search.toLowerCase())
+        && (rank === 'All' || m.rank === rank)
+        && (speciesFilter === 'All' || m.species === speciesFilter)
+        && (styleFilter === 'All' || (m.combatStyle || 'Mixed') === styleFilter)
+    })
+    if (sort === 'Name') return [...matches].sort((a,b)=>a.name.localeCompare(b.name))
+    if (sort === 'Level Low') return [...matches].sort((a,b)=>a.level-b.level)
+    if (sort === 'Level High') return [...matches].sort((a,b)=>b.level-a.level)
+    return matches
+  }, [monsters, search, rank, speciesFilter, styleFilter, sort])
+
+  const summary = useMemo(() => ({
+    soldiers: filtered.filter(m=>m.rank==='Soldier').length,
+    elites: filtered.filter(m=>m.rank==='Elite').length,
+    champions: filtered.filter(m=>m.rank==='Champion').length,
+    spellcasters: filtered.filter(m=>(m.spells || []).length > 0).length,
+    averageLevel: filtered.length ? Math.round(filtered.reduce((total,m)=>total+m.level,0) / filtered.length) : 0,
+  }), [filtered])
+
   return <section>
-    <div className="toolbar">
+    <div className="toolbar itemToolbar">
       <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search monsters, skills, spells, attacks..." />
+      <select className="compactSelect" value={rank} onChange={e=>setRank(e.target.value as 'All'|Rank)}><option>All</option>{ranks.map(r=><option key={r}>{r}</option>)}</select>
+      <select className="compactSelect" value={speciesFilter} onChange={e=>setSpeciesFilter(e.target.value as 'All'|Species)}><option>All</option>{species.map(s=><option key={s}>{s}</option>)}</select>
+      <select className="compactSelect" value={styleFilter} onChange={e=>setStyleFilter(e.target.value as 'All'|CombatStyle)}><option>All</option>{combatStyles.map(s=><option key={s}>{s}</option>)}</select>
+      <select className="compactSelect" value={sort} onChange={e=>setSort(e.target.value as MonsterSort)}><option>Newest</option><option>Name</option><option>Level Low</option><option>Level High</option></select>
       <span>{filtered.length} entries</span>
     </div>
-    {filtered.length === 0 ? <Empty text="No monsters saved yet. Generate one to start your database." /> : <div className="grid">
+    <div className="databaseSummary">
+      <span>Soldiers <b>{summary.soldiers}</b></span><span>Elites <b>{summary.elites}</b></span><span>Champions <b>{summary.champions}</b></span><span>Spellcasters <b>{summary.spellcasters}</b></span><span>Avg Lv <b>{summary.averageLevel}</b></span>
+    </div>
+    {filtered.length === 0 ? <Empty text="No matching monsters saved yet. Generate one to start your database." /> : <div className="grid">
       {filtered.map(m => <MonsterCard key={m.id} monster={m} onDelete={()=>setMonsters(prev=>prev.filter(x=>x.id!==m.id))} />)}
     </div>}
   </section>
