@@ -30,6 +30,16 @@ const nonPhysical = damageTypes.filter(t => t !== 'physical')
 const basicStatuses = ['dazed', 'shaken', 'slow', 'weak'] as const
 const allStatuses = ['dazed', 'shaken', 'slow', 'weak', 'enraged', 'poisoned'] as const
 
+const styleAttributePriorities: Record<CombatStyle, AttributeKey[]> = {
+  Mixed: ['dex', 'ins', 'mig', 'wlp'],
+  Brute: ['mig', 'dex', 'wlp', 'ins'],
+  Defender: ['mig', 'ins', 'wlp', 'dex'],
+  Controller: ['ins', 'wlp', 'dex', 'mig'],
+  Spellcaster: ['ins', 'wlp', 'dex', 'mig'],
+  Assassin: ['dex', 'ins', 'mig', 'wlp'],
+  Support: ['wlp', 'ins', 'dex', 'mig'],
+}
+
 export interface MonsterAttack {
   name: string
   formula: string
@@ -83,13 +93,14 @@ function increaseDie(die: Die): Die {
   return die === 6 ? 8 : die === 8 ? 10 : 12
 }
 
-function applyLevelAttributeIncreases(level: number, attrs: Record<AttributeKey, Die>) {
+function applyLevelAttributeIncreases(level: number, attrs: Record<AttributeKey, Die>, combatStyle: CombatStyle) {
   const result = { ...attrs }
   const increases = (level >= 20 ? 1 : 0) + (level >= 40 ? 1 : 0) + (level >= 60 ? 1 : 0)
   for (let i = 0; i < increases; i++) {
     const eligible = (Object.keys(result) as AttributeKey[]).filter(k => result[k] < 12)
     if (!eligible.length) break
-    const key = pick(eligible)
+    const preferred = styleAttributePriorities[combatStyle].filter(k => eligible.includes(k)).slice(0, 2)
+    const key = combatStyle === 'Mixed' || !preferred.length ? pick(eligible) : pick(preferred)
     result[key] = increaseDie(result[key])
   }
   return result
@@ -132,7 +143,19 @@ function sampleTwo<T>(values: readonly T[]): [T, T] {
   return [first, second]
 }
 
-function makeSpell(level: number, rank: Rank): MonsterSpell {
+function assignAttributesForStyle(dice: Die[], combatStyle: CombatStyle): Record<AttributeKey, Die> {
+  if (combatStyle === 'Mixed') {
+    const shuffled = shuffle(dice)
+    return { dex: shuffled[0], ins: shuffled[1], mig: shuffled[2], wlp: shuffled[3] }
+  }
+
+  const sorted = [...dice].sort((a, b) => b - a)
+  const attrs = {} as Record<AttributeKey, Die>
+  styleAttributePriorities[combatStyle].forEach((key, index) => { attrs[key] = sorted[index] })
+  return attrs
+}
+
+function makeSpell(level: number, rank: Rank, combatStyle: CombatStyle): MonsterSpell {
   const type = pick(damageTypes)
   const status = pick(basicStatuses)
   const status2 = pick(basicStatuses.filter(s => s !== status))
@@ -155,7 +178,18 @@ function makeSpell(level: number, rank: Rank): MonsterSpell {
   if (level >= 30 && rank !== 'Soldier') {
     options.push({ name: 'Devastation', mp: '30', target: 'Any visible creatures', duration: 'Instantaneous', effect: `Each chosen target suffers 30 ${type} damage. Once per turn; only on this NPC's last turn in the round.` })
   }
-  return pick(options)
+
+  const preferredNames: Record<CombatStyle, string[]> = {
+    Mixed: [],
+    Brute: ['Breath', 'Cursed Breath', 'Life Theft', 'Rage'],
+    Defender: ['Shell', 'Lick Wounds', 'War Cry'],
+    Controller: ['Area Status', 'Curse', 'Curse XL', 'Poison', 'Rage', 'Weaken'],
+    Spellcaster: ['Breath', 'Cursed Breath', 'Curse XL', 'Mind Theft', 'Devastation'],
+    Assassin: ['Cursed Breath', 'Curse', 'Life Theft', 'Weaken'],
+    Support: ['Quicken', 'War Cry', 'Lick Wounds', 'Shell', 'Mind Theft'],
+  }
+  const preferred = options.filter(spell => preferredNames[combatStyle].includes(spell.name))
+  return pick(preferred.length ? [...options, ...preferred, ...preferred] : options)
 }
 
 function chooseSkillName(complexity: Complexity, species: Species, chosen: MonsterSkill[], affinities: Record<DamageType, Affinity>, combatStyle: CombatStyle) {
@@ -193,9 +227,9 @@ export function generateMonster(options: {
   const combatStyle = options.combatStyle || 'Mixed'
   const soldierEquivalent = rank === 'Elite' ? 2 : rank === 'Champion' ? Math.max(2, options.soldierEquivalent) : 1
   const arrayName = pick(Object.keys(attributeArrays))
-  const dice = shuffle(attributeArrays[arrayName])
-  const rawAttrs: Record<AttributeKey, Die> = { dex: dice[0], ins: dice[1], mig: dice[2], wlp: dice[3] }
-  const attrs = applyLevelAttributeIncreases(level, rawAttrs)
+  const dice = attributeArrays[arrayName]
+  const rawAttrs = assignAttributesForStyle(dice, combatStyle)
+  const attrs = applyLevelAttributeIncreases(level, rawAttrs, combatStyle)
   const base = calculateBaseStats(level, attrs)
 
   let hp = base.hp
@@ -235,7 +269,8 @@ export function generateMonster(options: {
     Assassin: [['dex','dex'], ['dex','ins'], ['dex','mig']],
     Support: [['ins','wlp'], ['dex','ins']],
   }
-  const pairs = combatStyle === 'Mixed' ? basePairs : [...basePairs, ...(stylePairs[combatStyle] || [])]
+  const preferredPairs = stylePairs[combatStyle] || []
+  const pairs = combatStyle === 'Mixed' ? basePairs : [...preferredPairs, ...preferredPairs, ...basePairs]
   const attacks: MonsterAttack[] = Array.from({ length: attackCount }, (_, i) => {
     const [a, b] = pick(pairs)
     const type = pick(damageTypes)
@@ -303,22 +338,30 @@ export function generateMonster(options: {
     } else if (skillName === 'Spellcaster') {
       if (Math.random() < 0.5) {
         mp += 10
-        const spell = makeSpell(level, rank)
+        const spell = makeSpell(level, rank, combatStyle)
         spells.push(spell)
         skills.push({ name:skillName, summary:`Learns ${spell.name} and gains +10 maximum MP.` })
       } else {
-        const first = makeSpell(level, rank)
-        let second = makeSpell(level, rank)
-        for (let tries=0; second.name === first.name && tries < 10; tries++) second = makeSpell(level, rank)
+        const first = makeSpell(level, rank, combatStyle)
+        let second = makeSpell(level, rank, combatStyle)
+        for (let tries=0; second.name === first.name && tries < 10; tries++) second = makeSpell(level, rank, combatStyle)
         spells.push(first, second)
         skills.push({ name:skillName, summary:`Learns ${first.name} and ${second.name}.` })
       }
     } else if (skillName === 'Special Attack') {
       const attack = pick(attacks)
+      const styleEffects: Partial<Record<CombatStyle, string[]>> = {
+        Brute: ['gains multi (2)', 'recovers HP equal to half the HP loss it causes'],
+        Defender: ['grants the NPC a temporary bonus until its next turn', 'prevents a specific action on the target’s next turn'],
+        Controller: [`inflicts ${pick(basicStatuses)}`, 'prevents a specific action on the target’s next turn', 'targets Magic Defense instead of Defense'],
+        Spellcaster: ['targets Magic Defense instead of Defense', `inflicts ${pick(basicStatuses)}`],
+        Assassin: [`inflicts ${pick(basicStatuses)}`, 'targets Magic Defense instead of Defense', 'gains multi (2)'],
+        Support: ['grants the NPC a temporary bonus until its next turn', 'prevents a specific action on the target’s next turn'],
+      }
       const effects = [
         'gains multi (2)', 'targets Magic Defense instead of Defense', `inflicts ${pick(basicStatuses)}`,
         'recovers HP equal to half the HP loss it causes', 'prevents a specific action on the target’s next turn',
-        'grants the NPC a temporary bonus until its next turn'
+        'grants the NPC a temporary bonus until its next turn', ...(styleEffects[combatStyle] || []), ...(styleEffects[combatStyle] || [])
       ]
       const effect = pick(effects)
       attack.effect = effect
@@ -342,7 +385,7 @@ export function generateMonster(options: {
   }
 
   const allSkills = [...freeSkills, ...skills]
-  const notes = [speciesRules[species].note, `${arrayName} attribute array.`]
+  const notes = [speciesRules[species].note, `${arrayName} attribute array.`, `Combat style profile: ${combatStyle}.`]
   if (level >= 20) notes.push(`Level-based Attribute increases applied at ${[20,40,60].filter(n=>level>=n).join(', ')}.`)
   notes.push(...allSkills.map(s => `${s.name}: ${s.summary}`))
   notes.push(...spells.map(s => `Spell — ${s.name} (${s.mp} MP, ${s.target}, ${s.duration}): ${s.effect}`))
