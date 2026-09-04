@@ -38,12 +38,14 @@ function officialLibraryReady() {
 }
 
 async function applyCorrections() {
-  const [{ applyOfficialSourceCorrections }, { applyOfficialItemSourceCorrections }] = await Promise.all([
+  const [monsterModule, itemModule, atlasItemModule] = await Promise.all([
     import('./officialSourceCorrections'),
     import('./officialItemSourceCorrections'),
+    import('./officialAtlasItemSourceCorrections'),
   ])
-  applyOfficialSourceCorrections()
-  applyOfficialItemSourceCorrections()
+  monsterModule.applyOfficialSourceCorrections()
+  itemModule.applyOfficialItemSourceCorrections()
+  atlasItemModule.applyOfficialAtlasItemSourceCorrections()
 }
 
 export async function ensureOfficialData() {
