@@ -1,0 +1,6 @@
+.dbPresetTools { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0 0 12px; padding:9px 10px; border:1px solid #2a374a; border-radius:12px; background:rgba(15,23,42,.5); }
+.dbPresetLabel { color:#94a3b8; font-size:.84rem; font-weight:700; }
+.dbPresetTools select { width:auto; min-width:190px; flex:1 1 220px; padding:8px 10px; }
+.dbPresetTools button { border:1px solid #334155; background:#111827; color:#e5e7eb; border-radius:10px; padding:8px 10px; }
+.dbPresetTools button:hover { border-color:#818cf8; }
+@media (max-width:650px) { .dbPresetTools { align-items:stretch; } .dbPresetLabel { flex-basis:100%; } .dbPresetTools select { width:100%; flex-basis:100%; } .dbPresetTools button { flex:1 1 120px; } }
