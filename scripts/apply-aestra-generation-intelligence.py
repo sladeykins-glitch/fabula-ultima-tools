@@ -83,3 +83,4 @@ old='Targeted rerolls preserve level, rank, attributes, HP, MP and the rest of t
 new='Targeted rerolls preserve level, rank, attributes, HP, MP and Aestra regional identity; name/theme/affinity rerolls refresh the relevant regional layer without stacking duplicate mechanics.'
 s=s.replace(old,new,1)
 p.write_text(s)
+# trigger migration
