@@ -1,6 +1,7 @@
 import type { GeneratedItem, DamageType, ItemType } from './items'
 
 export type ItemTheme = 'Heroic' | 'Arcane' | 'Infernal' | 'Verdant' | 'Spectral' | 'Industrial' | 'Tidal'
+export type ItemRerollPart = 'name' | 'quality' | 'element' | 'theme'
 
 type ItemProfile = {
   adjectives:string[]
@@ -24,6 +25,11 @@ const profiles:Record<ItemTheme,ItemProfile>={
 function pick<T>(v:readonly T[]):T{return v[Math.floor(Math.random()*v.length)]}
 function replaceFirstStatus(text:string,status:string){return text.replace(/\b(dazed|shaken|slow|weak|enraged|poisoned)\b/i,status)}
 function replaceDamage(text:string,damage:DamageType){return text.replace(/\b(air|bolt|dark|earth|fire|ice|light|poison) damage\b/i,`${damage} damage`)}
+function themeFromItem(item:GeneratedItem):ItemTheme|undefined {
+  const line=(item.breakdown||[]).find(entry=>entry.startsWith('Theme: '))
+  const value=line?.replace('Theme: ','').replace('.','') as ItemTheme|undefined
+  return value&&profiles[value]?value:undefined
+}
 
 export function chooseItemTheme(item:GeneratedItem):ItemTheme{
   const category=String(item.category||'').toLowerCase()
@@ -46,7 +52,33 @@ export function applyItemTheme(item:GeneratedItem,requested?:ItemTheme):Generate
   const themedDamage=item.type==='Weapon'&&item.damageType&&item.damageType!=='physical'?damage:item.damageType
   const quality=item.quality ? `${item.quality} · ${theme} theme` : `${theme} theme`
   const origin=`${theme} design built around ${material}; ${p.flavour}`
-  return {...item,name,damageType:themedDamage,quality,effect,breakdown:[...(item.breakdown||[]),`Theme: ${theme}.`,`Concept material: ${material}.`,`Base identity: ${baseLabel}.`,origin]}
+  const retained=(item.breakdown||[]).filter(line=>!line.startsWith('Theme: ')&&!line.startsWith('Concept material: ')&&!line.startsWith('Base identity: ')&&!line.startsWith('Coherence: '))
+  return {...item,name,damageType:themedDamage,quality,effect,breakdown:[...retained,`Theme: ${theme}.`,`Concept material: ${material}.`,`Base identity: ${baseLabel}.`,origin,`Coherence: ${item.type}${item.category?` · ${item.category}`:''} · ${theme}${themedDamage?` · ${themedDamage}`:''}.`]}
+}
+
+export function rerollItemPart(item:GeneratedItem,part:ItemRerollPart):GeneratedItem{
+  const theme=themeFromItem(item)||chooseItemTheme(item),p=profiles[theme]
+  if(part==='name') return {...item,name:`${pick(p.adjectives)} ${pick(p.nouns[item.type])}`}
+  if(part==='element') {
+    if(item.type!=='Weapon') return item
+    const damage=pick(p.damage)
+    return {...item,damageType:damage,effect:replaceDamage(item.effect||'',damage),breakdown:[...(item.breakdown||[]).filter(x=>!x.startsWith('Coherence: ')),`Coherence: ${item.type}${item.category?` · ${item.category}`:''} · ${theme} · ${damage}.`]}
+  }
+  if(part==='quality') {
+    const status=pick(p.statuses),damage=pick(p.damage)
+    return {...item,effect:replaceDamage(replaceFirstStatus(item.effect||'',status),damage),quality:item.quality?`${item.quality.split(' · ')[0]} · ${theme} theme`:`${theme} theme`}
+  }
+  const choices=itemThemes.filter(t=>t!==theme)
+  return applyItemTheme({...item,quality:item.quality?.split(' · ')[0]},pick(choices))
+}
+
+export function itemCoherenceSummary(item:GeneratedItem):string{
+  const theme=themeFromItem(item)||chooseItemTheme(item)
+  const parts=[`Theme: ${theme}`,`Type: ${item.type}`]
+  if(item.category) parts.push(`Category: ${item.category}`)
+  if(item.damageType) parts.push(`Damage: ${item.damageType}`)
+  if(item.quality) parts.push(`Quality: ${item.quality.split(' · ')[0]}`)
+  return parts.join(' · ')
 }
 
 export const itemThemes=Object.keys(profiles) as ItemTheme[]
