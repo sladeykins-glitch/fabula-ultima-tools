@@ -7,6 +7,7 @@ import SiteBackupTools from './SiteBackupTools'
 import SessionUtilityTools from './SessionUtilityTools'
 import SavedViewsTools from './SavedViewsTools'
 import UndoDeleteTools from './UndoDeleteTools'
+import DatabaseUtilityPanel from './DatabaseUtilityPanel'
 import PwaTools from './PwaTools'
 import { ensureOfficialData } from './officialBootstrap'
 import { migrateInterfaceStorage } from './storageMigrations'
@@ -25,6 +26,7 @@ function renderApp() {
       <SessionUtilityTools />
       <SavedViewsTools />
       <UndoDeleteTools />
+      <DatabaseUtilityPanel />
       <PwaTools />
     </React.StrictMode>,
   )
