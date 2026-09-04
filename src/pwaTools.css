@@ -1,0 +1,2 @@
+.pwaStatus { border:1px solid #334155; border-radius:999px; padding:5px 9px; color:#a7f3d0; background:rgba(6,78,59,.25); font-size:.75rem; font-weight:800; white-space:nowrap; }
+@media (max-width:650px) { .pwaStatus { order:3; } }
