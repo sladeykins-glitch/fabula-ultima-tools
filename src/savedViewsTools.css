@@ -6,7 +6,10 @@
 
 .savedViewsTools > button {
   white-space: nowrap;
+  background:#111827;
+  color:#cbd5e1;
 }
+.savedViewsTools > button:hover { border-color:#818cf8; color:#eef2ff; }
 
 .savedViewsMenu {
   position: absolute;
