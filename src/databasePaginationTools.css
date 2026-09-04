@@ -1,0 +1,9 @@
+.dbHiddenByPage { display:none !important; }
+.dbPaginationBar { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:14px 0 0; padding:10px 12px; border:1px solid #2a374a; border-radius:12px; background:rgba(15,23,42,.58); }
+.dbPaginationInfo { color:#94a3b8; font-size:.88rem; }
+.dbPaginationControls { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.dbPaginationControls label { display:flex; align-items:center; gap:7px; color:#cbd5e1; font-size:.86rem; }
+.dbPaginationControls select,.dbPaginationControls button { border:1px solid #334155; background:#111827; color:#e5e7eb; border-radius:9px; padding:7px 9px; }
+.dbPaginationControls button:disabled { opacity:.45; cursor:not-allowed; }
+.dbPaginationControls span { color:#cbd5e1; font-size:.86rem; min-width:94px; text-align:center; }
+@media (max-width:650px) { .dbPaginationBar { align-items:stretch; flex-direction:column; } .dbPaginationControls { justify-content:space-between; } }
