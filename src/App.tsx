@@ -23,6 +23,7 @@ const ITEM_FILTERS_KEY = 'fu-item-filters'
 const MONSTER_SEARCH_KEY = 'fu-monster-search'
 const MONSTER_GENERATOR_KEY = 'fu-monster-generator-settings'
 const ITEM_GENERATOR_KEY = 'fu-item-generator-settings'
+const DATABASE_PAGE_SIZE = 24
 
 function readStored<T>(key: string, fallback: T): T {
   try {
@@ -109,11 +110,7 @@ function MonsterCard({ monster, onDelete, database = false }: { monster: Monster
   const style = monster.combatStyle || 'Mixed'
   const librarySource = monsterLibrarySource(monster)
 
-  return <article
-    className="card monsterCard"
-    data-db-record-id={database ? monster.id : undefined}
-    data-db-record-kind={database ? 'monster' : undefined}
-  >
+  return <article className="card monsterCard" data-db-record-id={database ? monster.id : undefined} data-db-record-kind={database ? 'monster' : undefined}>
     <div className="cardTitle">
       <div><span className="source">{monster.source}{monster.source === 'Official' ? ` · ${librarySource}` : ''}</span><h2>{monster.name}</h2></div>
       {database && <div className="cardActions">
@@ -135,6 +132,15 @@ function MonsterCard({ monster, onDelete, database = false }: { monster: Monster
   </article>
 }
 
+function Pagination({ page, total, onPage }: { page: number; total: number; onPage: (page:number)=>void }) {
+  if (total <= 1) return null
+  return <div className="nativePagination" aria-label="Database pagination">
+    <button type="button" disabled={page <= 1} onClick={() => onPage(page - 1)}>Previous</button>
+    <span>Page <b>{page}</b> of <b>{total}</b></span>
+    <button type="button" disabled={page >= total} onClick={() => onPage(page + 1)}>Next</button>
+  </div>
+}
+
 function MonsterDatabase({ monsters, setMonsters, search, setSearch }: { monsters: Monster[]; setMonsters: React.Dispatch<React.SetStateAction<Monster[]>>; search: string; setSearch: (v:string)=>void }) {
   const initialFilters = useMemo(() => readStored(MONSTER_FILTERS_KEY, {
     rank: 'All' as 'All'|Rank,
@@ -148,10 +154,13 @@ function MonsterDatabase({ monsters, setMonsters, search, setSearch }: { monster
   const [styleFilter, setStyleFilter] = useState<'All'|CombatStyle>(initialFilters.styleFilter)
   const [sourceFilter, setSourceFilter] = useState<LibrarySource>(initialFilters.sourceFilter)
   const [sort, setSort] = useState<MonsterSort>(initialFilters.sort)
+  const [page, setPage] = useState(1)
 
   useEffect(() => {
     localStorage.setItem(MONSTER_FILTERS_KEY, JSON.stringify({ rank, speciesFilter, styleFilter, sourceFilter, sort }))
   }, [rank, speciesFilter, styleFilter, sourceFilter, sort])
+
+  useEffect(() => setPage(1), [search, rank, speciesFilter, styleFilter, sourceFilter, sort])
 
   const filtered = useMemo(() => {
     const matches = monsters.filter(m => {
@@ -160,11 +169,7 @@ function MonsterDatabase({ monsters, setMonsters, search, setSearch }: { monster
       const attacks = (m.attacks || []).map(a => `${a.name} ${a.damageType} ${a.effect || ''}`).join(' ')
       const book = monsterLibrarySource(m)
       const haystack = `${m.name} ${m.species} ${m.rank} ${m.combatStyle || ''} ${m.traits.join(' ')} ${skills} ${spells} ${attacks} ${book}`.toLowerCase()
-      return haystack.includes(search.toLowerCase())
-        && (rank === 'All' || m.rank === rank)
-        && (speciesFilter === 'All' || m.species === speciesFilter)
-        && (styleFilter === 'All' || (m.combatStyle || 'Mixed') === styleFilter)
-        && (sourceFilter === 'All' || book === sourceFilter)
+      return haystack.includes(search.toLowerCase()) && (rank === 'All' || m.rank === rank) && (speciesFilter === 'All' || m.species === speciesFilter) && (styleFilter === 'All' || (m.combatStyle || 'Mixed') === styleFilter) && (sourceFilter === 'All' || book === sourceFilter)
     })
     if (sort === 'Name') return [...matches].sort((a,b)=>a.name.localeCompare(b.name))
     if (sort === 'Level Low') return [...matches].sort((a,b)=>a.level-b.level)
@@ -181,6 +186,9 @@ function MonsterDatabase({ monsters, setMonsters, search, setSearch }: { monster
     custom: filtered.filter(m=>m.source!=='Official').length,
     averageLevel: filtered.length ? Math.round(filtered.reduce((total,m)=>total+m.level,0) / filtered.length) : 0,
   }), [filtered])
+  const totalPages = Math.max(1, Math.ceil(filtered.length / DATABASE_PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const paged = useMemo(() => filtered.slice((safePage - 1) * DATABASE_PAGE_SIZE, safePage * DATABASE_PAGE_SIZE), [filtered, safePage])
 
   return <section>
     <div className="toolbar itemToolbar">
@@ -195,17 +203,14 @@ function MonsterDatabase({ monsters, setMonsters, search, setSearch }: { monster
     <div className="databaseSummary">
       <span>Official <b>{summary.official}</b></span><span>Custom <b>{summary.custom}</b></span><span>Soldiers <b>{summary.soldiers}</b></span><span>Elites <b>{summary.elites}</b></span><span>Champions <b>{summary.champions}</b></span><span>Spellcasters <b>{summary.spellcasters}</b></span><span>Avg Lv <b>{summary.averageLevel}</b></span>
     </div>
+    <Pagination page={safePage} total={totalPages} onPage={setPage} />
     {filtered.length === 0 ? <Empty text="No matching monsters saved yet. Generate one to start your database." /> : <div className="grid">
-      {filtered.map(m => <MonsterCard
-        key={m.id}
-        monster={m}
-        database
-        onDelete={m.source === 'Official' ? undefined : () => {
-          if (!window.confirm(`Delete “${m.name}”? This cannot be undone unless you have a backup.`)) return
-          setMonsters(prev=>prev.filter(x=>x.id!==m.id))
-        }}
-      />)}
+      {paged.map(m => <MonsterCard key={m.id} monster={m} database onDelete={m.source === 'Official' ? undefined : () => {
+        if (!window.confirm(`Delete “${m.name}”? This cannot be undone unless you have a backup.`)) return
+        setMonsters(prev=>prev.filter(x=>x.id!==m.id))
+      }} />)}
     </div>}
+    <Pagination page={safePage} total={totalPages} onPage={setPage} />
   </section>
 }
 
@@ -226,44 +231,29 @@ function MonsterGenerator({ onSave }: { onSave: (m:Monster)=>void }) {
   const [combatStyle, setCombatStyle] = useState<CombatStyle>(initial.combatStyle)
   const [result, setResult] = useState<Monster|null>(null)
 
-  useEffect(() => {
-    localStorage.setItem(MONSTER_GENERATOR_KEY, JSON.stringify({ level, rank, soldierEquivalent, sp, complexity, combatStyle }))
-  }, [level, rank, soldierEquivalent, sp, complexity, combatStyle])
-
+  useEffect(() => { localStorage.setItem(MONSTER_GENERATOR_KEY, JSON.stringify({ level, rank, soldierEquivalent, sp, complexity, combatStyle })) }, [level, rank, soldierEquivalent, sp, complexity, combatStyle])
   const make = () => setResult(generateMonster({ level, rank, soldierEquivalent, species: sp, complexity, combatStyle }))
 
   return <section className="twoCol">
-    <div className="panel">
-      <h2>Random Monster Generator</h2>
+    <div className="panel"><h2>Random Monster Generator</h2>
       <label>Level <strong>{level}</strong><input type="range" min="5" max="60" step="5" value={level} onChange={e=>setLevel(Number(e.target.value))}/></label>
       <label>Rank<select value={rank} onChange={e=>setRank(e.target.value as Rank)}>{ranks.map(r=><option key={r}>{r}</option>)}</select></label>
       {rank==='Champion' && <label>Soldiers replaced<input type="number" min="2" max="10" value={soldierEquivalent} onChange={e=>setSoldierEquivalent(Number(e.target.value))}/></label>}
-      <label>Species<select value={sp} onChange={e=>setSp(e.target.value as Species)}>{species.map(s=><option key={s}>{s}</option>)}</select></label>
-      <p className="note">{speciesRules[sp].note}</p>
+      <label>Species<select value={sp} onChange={e=>setSp(e.target.value as Species)}>{species.map(s=><option key={s}>{s}</option>)}</select></label><p className="note">{speciesRules[sp].note}</p>
       <label>Complexity<select value={complexity} onChange={e=>setComplexity(e.target.value as typeof complexity)}><option>Simple</option><option>Standard</option><option>Crunchy</option></select></label>
       <p className="muted smallText">Complexity is a generator convenience, not an official NPC rule. It changes how involved the generated skill set tends to be.</p>
       <label>Combat style<select value={combatStyle} onChange={e=>setCombatStyle(e.target.value as CombatStyle)}>{combatStyles.map(style=><option key={style}>{style}</option>)}</select></label>
       <p className="muted smallText">Combat style shapes Attribute priorities, attack patterns, spell choices, skills, reactions, Crisis effects, and tactical guidance without adding a separate bonus budget.</p>
       <button className="primary" onClick={make}>Generate Monster</button>
     </div>
-    <div className="panel preview">
-      {!result ? <Empty text="Choose your options and generate a monster." /> : <>
-        <MonsterCard monster={result} />
-        <div className="buttonRow"><button onClick={make}>Reroll</button><button className="primary" onClick={()=>onSave(result)}>Save to Database</button></div>
-      </>}
-    </div>
+    <div className="panel preview">{!result ? <Empty text="Choose your options and generate a monster." /> : <><MonsterCard monster={result} /><div className="buttonRow"><button onClick={make}>Reroll</button><button className="primary" onClick={()=>onSave(result)}>Save to Database</button></div></>}</div>
   </section>
 }
 
 function ItemDatabase({ items, setItems }: { items: AppItem[]; setItems: React.Dispatch<React.SetStateAction<AppItem[]>> }) {
   const initialFilters = useMemo(() => readStored(ITEM_FILTERS_KEY, {
-    search: '',
-    type: 'All' as 'All'|ItemType,
-    category: 'All',
-    sourceFilter: 'All' as LibrarySource,
-    martialFilter: 'All' as 'All'|'Martial'|'Non-martial',
-    materialFilter: 'All' as 'All'|'With Material'|'No Material',
-    sort: 'Newest' as ItemSort,
+    search: '', type: 'All' as 'All'|ItemType, category: 'All', sourceFilter: 'All' as LibrarySource,
+    martialFilter: 'All' as 'All'|'Martial'|'Non-martial', materialFilter: 'All' as 'All'|'With Material'|'No Material', sort: 'Newest' as ItemSort,
   }), [])
   const [search, setSearch] = useState(initialFilters.search)
   const [type, setType] = useState<'All'|ItemType>(initialFilters.type)
@@ -272,11 +262,10 @@ function ItemDatabase({ items, setItems }: { items: AppItem[]; setItems: React.D
   const [martialFilter, setMartialFilter] = useState<'All'|'Martial'|'Non-martial'>(initialFilters.martialFilter)
   const [materialFilter, setMaterialFilter] = useState<'All'|'With Material'|'No Material'>(initialFilters.materialFilter)
   const [sort, setSort] = useState<ItemSort>(initialFilters.sort)
+  const [page, setPage] = useState(1)
 
-  useEffect(() => {
-    localStorage.setItem(ITEM_FILTERS_KEY, JSON.stringify({ search, type, category, sourceFilter, martialFilter, materialFilter, sort }))
-  }, [search, type, category, sourceFilter, martialFilter, materialFilter, sort])
-
+  useEffect(() => { localStorage.setItem(ITEM_FILTERS_KEY, JSON.stringify({ search, type, category, sourceFilter, martialFilter, materialFilter, sort })) }, [search, type, category, sourceFilter, martialFilter, materialFilter, sort])
+  useEffect(() => setPage(1), [search, type, category, sourceFilter, martialFilter, materialFilter, sort])
   const categories = useMemo(() => Array.from(new Set(items.map(i=>i.category).filter((value): value is string => !!value))).sort(), [items])
 
   const filtered = useMemo(() => {
@@ -286,12 +275,7 @@ function ItemDatabase({ items, setItems }: { items: AppItem[]; setItems: React.D
       const haystack = `${item.name} ${item.type} ${item.category || ''} ${item.baseItem || ''} ${item.quality || ''} ${item.effect} ${materialText} ${item.origin || ''} ${book}`.toLowerCase()
       const matchesMartial = martialFilter === 'All' || (martialFilter === 'Martial' ? !!item.martial : !item.martial)
       const matchesMaterial = materialFilter === 'All' || (materialFilter === 'With Material' ? !!item.material : !item.material)
-      return haystack.includes(search.toLowerCase())
-        && (type === 'All' || item.type === type)
-        && (category === 'All' || item.category === category)
-        && (sourceFilter === 'All' || book === sourceFilter)
-        && matchesMartial
-        && matchesMaterial
+      return haystack.includes(search.toLowerCase()) && (type === 'All' || item.type === type) && (category === 'All' || item.category === category) && (sourceFilter === 'All' || book === sourceFilter) && matchesMartial && matchesMaterial
     })
     if (sort === 'Name') return [...matches].sort((a,b)=>a.name.localeCompare(b.name))
     if (sort === 'Cost Low') return [...matches].sort((a,b)=>a.cost-b.cost)
@@ -300,94 +284,59 @@ function ItemDatabase({ items, setItems }: { items: AppItem[]; setItems: React.D
   }, [items, search, type, category, sourceFilter, martialFilter, materialFilter, sort])
 
   const summary = useMemo(() => ({
-    weapons: filtered.filter(i=>i.type==='Weapon').length,
-    armor: filtered.filter(i=>i.type==='Armor').length,
-    shields: filtered.filter(i=>i.type==='Shield').length,
-    accessories: filtered.filter(i=>i.type==='Accessory').length,
-    official: filtered.filter(i=>i.source==='Official').length,
-    custom: filtered.filter(i=>i.source!=='Official').length,
-    martial: filtered.filter(i=>!!i.martial).length,
-    materials: filtered.filter(i=>!!i.material).length,
+    weapons: filtered.filter(i=>i.type==='Weapon').length, armor: filtered.filter(i=>i.type==='Armor').length, shields: filtered.filter(i=>i.type==='Shield').length,
+    accessories: filtered.filter(i=>i.type==='Accessory').length, official: filtered.filter(i=>i.source==='Official').length, custom: filtered.filter(i=>i.source!=='Official').length,
+    martial: filtered.filter(i=>!!i.martial).length, materials: filtered.filter(i=>!!i.material).length,
     averageCost: filtered.length ? Math.round(filtered.reduce((total,i)=>total+i.cost,0) / filtered.length) : 0,
   }), [filtered])
+  const totalPages = Math.max(1, Math.ceil(filtered.length / DATABASE_PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const paged = useMemo(() => filtered.slice((safePage - 1) * DATABASE_PAGE_SIZE, safePage * DATABASE_PAGE_SIZE), [filtered, safePage])
 
   return <section>
     <div className="toolbar itemToolbar">
       <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search items, qualities, materials, effects..." />
       <select className="compactSelect" value={sourceFilter} onChange={e=>setSourceFilter(e.target.value as LibrarySource)}>{librarySources.map(source=><option key={source}>{source}</option>)}</select>
-      <select className="compactSelect" value={type} onChange={e=>setType(e.target.value as 'All'|ItemType)}>
-        <option>All</option><option>Weapon</option><option>Armor</option><option>Shield</option><option>Accessory</option>
-      </select>
-      <select className="compactSelect" value={category} onChange={e=>setCategory(e.target.value)}>
-        <option>All</option>{categories.map(c=><option key={c}>{c}</option>)}
-      </select>
-      <select className="compactSelect" value={martialFilter} onChange={e=>setMartialFilter(e.target.value as 'All'|'Martial'|'Non-martial')}>
-        <option>All</option><option>Martial</option><option>Non-martial</option>
-      </select>
-      <select className="compactSelect" value={materialFilter} onChange={e=>setMaterialFilter(e.target.value as 'All'|'With Material'|'No Material')}>
-        <option>All</option><option>With Material</option><option>No Material</option>
-      </select>
-      <select className="compactSelect" value={sort} onChange={e=>setSort(e.target.value as ItemSort)}>
-        <option>Newest</option><option>Name</option><option>Cost Low</option><option>Cost High</option>
-      </select>
+      <select className="compactSelect" value={type} onChange={e=>setType(e.target.value as 'All'|ItemType)}><option>All</option><option>Weapon</option><option>Armor</option><option>Shield</option><option>Accessory</option></select>
+      <select className="compactSelect" value={category} onChange={e=>setCategory(e.target.value)}><option>All</option>{categories.map(c=><option key={c}>{c}</option>)}</select>
+      <select className="compactSelect" value={martialFilter} onChange={e=>setMartialFilter(e.target.value as 'All'|'Martial'|'Non-martial')}><option>All</option><option>Martial</option><option>Non-martial</option></select>
+      <select className="compactSelect" value={materialFilter} onChange={e=>setMaterialFilter(e.target.value as 'All'|'With Material'|'No Material')}><option>All</option><option>With Material</option><option>No Material</option></select>
+      <select className="compactSelect" value={sort} onChange={e=>setSort(e.target.value as ItemSort)}><option>Newest</option><option>Name</option><option>Cost Low</option><option>Cost High</option></select>
       <span>{filtered.length} entries</span>
     </div>
     <div className="databaseSummary">
       <span>Official <b>{summary.official}</b></span><span>Custom <b>{summary.custom}</b></span><span>Weapons <b>{summary.weapons}</b></span><span>Armor <b>{summary.armor}</b></span><span>Shields <b>{summary.shields}</b></span><span>Accessories <b>{summary.accessories}</b></span><span>Martial <b>{summary.martial}</b></span><span>Materials <b>{summary.materials}</b></span><span>Avg Cost <b>{summary.averageCost}z</b></span>
     </div>
-    {filtered.length===0 ? <Empty text="No matching items saved yet. Generate one to start your database."/> : <div className="grid">{filtered.map(item=><ItemCard
-      key={item.id}
-      item={item}
-      database
-      onDelete={item.source === 'Official' ? undefined : () => {
-        if (!window.confirm(`Delete “${item.name}”? This cannot be undone unless you have a backup.`)) return
-        setItems(prev=>prev.filter(x=>x.id!==item.id))
-      }}
-    />)}</div>}
+    <Pagination page={safePage} total={totalPages} onPage={setPage} />
+    {filtered.length===0 ? <Empty text="No matching items saved yet. Generate one to start your database."/> : <div className="grid">{paged.map(item=><ItemCard key={item.id} item={item} database onDelete={item.source === 'Official' ? undefined : () => {
+      if (!window.confirm(`Delete “${item.name}”? This cannot be undone unless you have a backup.`)) return
+      setItems(prev=>prev.filter(x=>x.id!==item.id))
+    }} />)}</div>}
+    <Pagination page={safePage} total={totalPages} onPage={setPage} />
   </section>
 }
 
 function ItemCard({ item, onDelete, database = false }: { item: AppItem; onDelete?:()=>void; database?: boolean }) {
   const librarySource = itemLibrarySource(item)
-  return <article
-    className="card itemCard"
-    data-db-record-id={database ? item.id : undefined}
-    data-db-record-kind={database ? 'item' : undefined}
-    key={item.id}
-  >
-    <div className="cardTitle">
-      <div><span className="source">{item.source}{item.source === 'Official' ? ` · ${librarySource}` : ''}</span><h2>{item.name}</h2></div>
-      {database && <div className="cardActions">
-        <button type="button" className="dbOpenButton" data-db-open="item" data-db-record-id={item.id}>Open / Edit</button>
-        {onDelete && <button className="danger" onClick={onDelete}>Delete</button>}
-      </div>}
+  return <article className="card itemCard" data-db-record-id={database ? item.id : undefined} data-db-record-kind={database ? 'item' : undefined} key={item.id}>
+    <div className="cardTitle"><div><span className="source">{item.source}{item.source === 'Official' ? ` · ${librarySource}` : ''}</span><h2>{item.name}</h2></div>
+      {database && <div className="cardActions"><button type="button" className="dbOpenButton" data-db-open="item" data-db-record-id={item.id}>Open / Edit</button>{onDelete && <button className="danger" onClick={onDelete}>Delete</button>}</div>}
     </div>
     <div className="itemMeta"><span>{item.type}</span>{item.category && <span>{item.category}</span>}<span>{item.cost}z</span>{item.martial && <span>Martial</span>}{item.material && <span>Material</span>}</div>
     {item.baseItem && <p><strong>Base:</strong> {item.baseItem}</p>}
     {item.material && <div className="materialBox"><span className="source">Natural Fantasy Material</span><p><strong>{item.material.name}</strong> · {item.material.nature}</p><p className="muted">{item.material.descriptorKind}{item.material.element ? ` · ${item.material.element}` : ''}{item.material.function ? ` · ${item.material.function}` : ''}</p></div>}
     {item.origin && <p className="note"><strong>Origin:</strong> {item.origin}</p>}
-    {item.type === 'Weapon' && <div className="stats">
-      <b>{item.handedness}</b><b>{item.range}</b><b>{item.accuracy}{item.accuracyBonus ? ` +${item.accuracyBonus}` : ''}</b><b>HR + {item.damage}</b><b>{item.damageType}</b>
-    </div>}
+    {item.type === 'Weapon' && <div className="stats"><b>{item.handedness}</b><b>{item.range}</b><b>{item.accuracy}{item.accuracyBonus ? ` +${item.accuracyBonus}` : ''}</b><b>HR + {item.damage}</b><b>{item.damageType}</b></div>}
     {(item.type === 'Armor' || item.type === 'Shield') && <div className="stats"><b>DEF {item.defense}</b><b>M.DEF {item.magicDefense}</b><b>Init {item.initiative && item.initiative > 0 ? '+' : ''}{item.initiative || 0}</b></div>}
-    {item.quality && <p><strong>Quality / Customizations:</strong> {item.quality}</p>}
-    <p className="attack">{item.effect}</p>
+    {item.quality && <p><strong>Quality / Customizations:</strong> {item.quality}</p>}<p className="attack">{item.effect}</p>
     {(item.breakdown?.length ?? 0) > 0 && <details><summary>Price / rule breakdown</summary>{(item.breakdown || []).map((b,i)=><p className="note" key={i}>{b}</p>)}</details>}
   </article>
 }
 
 function ItemGenerator({ onSave }: { onSave: (item:AppItem)=>void }) {
   const initial = useMemo(() => readStored(ITEM_GENERATOR_KEY, {
-    type: 'Weapon' as ItemType,
-    weaponMethod: 'Core Rare' as 'Core Rare'|'Atlas Custom',
-    maxCost: 1500,
-    allowMartial: true,
-    allowTransforming: true,
-    damageType: 'random' as DamageType|'random',
-    addMaterial: false,
-    materialNature: 'Random' as MaterialNature|'Random',
-    descriptorMode: 'Random' as 'Elemental'|'Functional'|'Random',
-    materialFunction: 'Random' as MaterialFunction|'Random',
+    type: 'Weapon' as ItemType, weaponMethod: 'Core Rare' as 'Core Rare'|'Atlas Custom', maxCost: 1500, allowMartial: true, allowTransforming: true,
+    damageType: 'random' as DamageType|'random', addMaterial: false, materialNature: 'Random' as MaterialNature|'Random', descriptorMode: 'Random' as 'Elemental'|'Functional'|'Random', materialFunction: 'Random' as MaterialFunction|'Random',
   }), [])
   const [type, setType] = useState<ItemType>(initial.type)
   const [weaponMethod, setWeaponMethod] = useState<'Core Rare'|'Atlas Custom'>(initial.weaponMethod)
@@ -401,43 +350,21 @@ function ItemGenerator({ onSave }: { onSave: (item:AppItem)=>void }) {
   const [materialFunction, setMaterialFunction] = useState<MaterialFunction|'Random'>(initial.materialFunction)
   const [result, setResult] = useState<AppItem|null>(null)
 
-  useEffect(() => {
-    localStorage.setItem(ITEM_GENERATOR_KEY, JSON.stringify({
-      type, weaponMethod, maxCost, allowMartial, allowTransforming, damageType,
-      addMaterial, materialNature, descriptorMode, materialFunction,
-    }))
-  }, [type, weaponMethod, maxCost, allowMartial, allowTransforming, damageType, addMaterial, materialNature, descriptorMode, materialFunction])
+  useEffect(() => { localStorage.setItem(ITEM_GENERATOR_KEY, JSON.stringify({ type, weaponMethod, maxCost, allowMartial, allowTransforming, damageType, addMaterial, materialNature, descriptorMode, materialFunction })) }, [type, weaponMethod, maxCost, allowMartial, allowTransforming, damageType, addMaterial, materialNature, descriptorMode, materialFunction])
 
   const generate = () => {
     let item: AppItem
-    if (type === 'Weapon' && weaponMethod === 'Atlas Custom') {
-      item = generateCustomWeapon({ allowMartial, allowTransforming, preferredDamageType:damageType })
-    } else {
-      item = generateItem({ type, maxCost, allowMartial, preferredDamageType:damageType })
-    }
-
+    if (type === 'Weapon' && weaponMethod === 'Atlas Custom') item = generateCustomWeapon({ allowMartial, allowTransforming, preferredDamageType:damageType })
+    else item = generateItem({ type, maxCost, allowMartial, preferredDamageType:damageType })
     if (addMaterial) {
-      const material = generateMaterial({
-        nature: materialNature,
-        descriptorMode,
-        element: descriptorMode === 'Elemental' && damageType !== 'random' && damageType !== 'physical' ? damageType : 'Random',
-        function: materialFunction,
-      })
-      item = {
-        ...item,
-        material,
-        origin: `Crafted using ${material.name.toLowerCase()}, a ${material.nature.toLowerCase()} material selected from the Natural Fantasy material tables.`,
-        breakdown: [...(item.breakdown || []), `Material: ${material.name} (flavour/origin; does not alter equipment cost by itself).`],
-      }
+      const material = generateMaterial({ nature: materialNature, descriptorMode, element: descriptorMode === 'Elemental' && damageType !== 'random' && damageType !== 'physical' ? damageType : 'Random', function: materialFunction })
+      item = { ...item, material, origin: `Crafted using ${material.name.toLowerCase()}, a ${material.nature.toLowerCase()} material selected from the Natural Fantasy material tables.`, breakdown: [...(item.breakdown || []), `Material: ${material.name} (flavour/origin; does not alter equipment cost by itself).`] }
     }
-
     setResult(item)
   }
 
   return <section className="twoCol">
-    <div className="panel">
-      <h2>Item Generator</h2>
-      <p className="muted">Core rare equipment, High Fantasy custom weapons, and optional Natural Fantasy materials all save into the same item database.</p>
+    <div className="panel"><h2>Item Generator</h2><p className="muted">Core rare equipment, High Fantasy custom weapons, and optional Natural Fantasy materials all save into the same item database.</p>
       <label>Item type<select value={type} onChange={e=>{ setType(e.target.value as ItemType); setResult(null) }}><option>Weapon</option><option>Armor</option><option>Shield</option><option>Accessory</option></select></label>
       {type === 'Weapon' && <label>Weapon system<select value={weaponMethod} onChange={e=>{ setWeaponMethod(e.target.value as 'Core Rare'|'Atlas Custom'); setResult(null) }}><option>Core Rare</option><option>Atlas Custom</option></select></label>}
       {(type !== 'Weapon' || weaponMethod === 'Core Rare') && <label>Maximum cost <strong>{maxCost}z</strong><input type="range" min="500" max="3000" step="100" value={maxCost} onChange={e=>setMaxCost(Number(e.target.value))}/></label>}
@@ -445,25 +372,14 @@ function ItemGenerator({ onSave }: { onSave: (item:AppItem)=>void }) {
       {type === 'Weapon' && weaponMethod === 'Atlas Custom' && <label className="checkRow"><input type="checkbox" checked={allowTransforming} onChange={e=>setAllowTransforming(e.target.checked)}/><span>Allow Transforming custom weapons</span></label>}
       {type === 'Weapon' && <label>Damage type<select value={damageType} onChange={e=>setDamageType(e.target.value as DamageType|'random')}><option value="random">Random</option><option value="physical">Physical</option><option value="air">Air</option><option value="bolt">Bolt</option><option value="dark">Dark</option><option value="earth">Earth</option><option value="fire">Fire</option><option value="ice">Ice</option><option value="light">Light</option><option value="poison">Poison</option></select></label>}
       {type === 'Weapon' && weaponMethod === 'Atlas Custom' && <p className="note">Atlas custom weapons start at 300z, are always two-handed, use DEX+INS or DEX+MIG, deal HR+5 physical before customizations, and receive three customization slots.</p>}
-
-      <div className="subpanel">
-        <label className="checkRow"><input type="checkbox" checked={addMaterial} onChange={e=>setAddMaterial(e.target.checked)}/><span>Add Natural Fantasy material / origin</span></label>
-        {addMaterial && <>
-          <label>Material nature<select value={materialNature} onChange={e=>setMaterialNature(e.target.value as MaterialNature|'Random')}>{materialNatures.map(n=><option key={n}>{n}</option>)}</select></label>
-          <label>Descriptor style<select value={descriptorMode} onChange={e=>setDescriptorMode(e.target.value as 'Elemental'|'Functional'|'Random')}><option>Random</option><option>Elemental</option><option>Functional</option></select></label>
-          {descriptorMode === 'Functional' && <label>Function<select value={materialFunction} onChange={e=>setMaterialFunction(e.target.value as MaterialFunction|'Random')}>{materialFunctions.map(f=><option key={f}>{f}</option>)}</select></label>}
-          <p className="note">This adds a generated material and origin to the item. It is descriptive unless you deliberately use the optional forging rules.</p>
-        </>}
-      </div>
-
+      <div className="subpanel"><label className="checkRow"><input type="checkbox" checked={addMaterial} onChange={e=>setAddMaterial(e.target.checked)}/><span>Add Natural Fantasy material / origin</span></label>{addMaterial && <>
+        <label>Material nature<select value={materialNature} onChange={e=>setMaterialNature(e.target.value as MaterialNature|'Random')}>{materialNatures.map(n=><option key={n}>{n}</option>)}</select></label>
+        <label>Descriptor style<select value={descriptorMode} onChange={e=>setDescriptorMode(e.target.value as 'Elemental'|'Functional'|'Random')}><option>Random</option><option>Elemental</option><option>Functional</option></select></label>
+        {descriptorMode === 'Functional' && <label>Function<select value={materialFunction} onChange={e=>setMaterialFunction(e.target.value as MaterialFunction|'Random')}>{materialFunctions.map(f=><option key={f}>{f}</option>)}</select></label>}
+        <p className="note">This adds a generated material and origin to the item. It is descriptive unless you deliberately use the optional forging rules.</p></>}</div>
       <button className="primary" onClick={generate}>Generate Item</button>
     </div>
-    <div className="panel preview">
-      {!result ? <Empty text="Choose your options and generate a rules-aware item."/> : <>
-        <ItemCard item={result} />
-        <div className="buttonRow"><button onClick={generate}>Reroll</button><button className="primary" onClick={()=>onSave(result)}>Save to Database</button></div>
-      </>}
-    </div>
+    <div className="panel preview">{!result ? <Empty text="Choose your options and generate a rules-aware item."/> : <><ItemCard item={result} /><div className="buttonRow"><button onClick={generate}>Reroll</button><button className="primary" onClick={()=>onSave(result)}>Save to Database</button></div></>}</div>
   </section>
 }
 
