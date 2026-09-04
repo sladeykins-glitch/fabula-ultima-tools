@@ -1,25 +1,10 @@
 from pathlib import Path
 
-# Deepen official-pattern analysis and selection without copying official rules text.
 p=Path('src/generatorEvolution.ts')
 s=p.read_text()
-old="""export function officialInspiredMonsterSettings(official:Monster[],level:number,species:string,rank:Rank,fallbackStyle:CombatStyle,fallbackComplexity:Complexity){
-  const sample=nearestOfficialMonsters(official,level,species,rank)
-  if(!sample.length)return{style:fallbackStyle,complexity:fallbackComplexity,note:'Official-pattern inspiration unavailable: no official profiles are currently loaded.'}
-  const styleCounts=new Map<CombatStyle,number>()
-  sample.forEach(m=>{const s=m.combatStyle||'Mixed';styleCounts.set(s,(styleCounts.get(s)||0)+1)})
-  const sampledStyle=[...styleCounts.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0]||fallbackStyle
-  // A deliberate player-selected role wins. Mixed means “let the reference set decide”.
-  const style=fallbackStyle==='Mixed'?sampledStyle:fallbackStyle
-  const avgSkills=sample.reduce((n,m)=>n+(m.skills||[]).length,0)/sample.length
-  const avgSpells=sample.reduce((n,m)=>n+(m.spells||[]).length,0)/sample.length
-  const sampledComplexity:Complexity=avgSkills+avgSpells>=6?'Crunchy':avgSkills+avgSpells<=2?'Simple':'Standard'
-  // Explicit Simple/Crunchy are treated as intentional; Standard can be nudged by the reference set.
-  const complexity=fallbackComplexity==='Standard'?sampledComplexity:fallbackComplexity
-  return{style,complexity,note:`Official-pattern inspiration: structure sampled from ${sample.length} nearby official ${species} profiles (role/complexity only; explicit role choices are preserved; names and rules text are not copied).`}
-}
-"""
-new="""function medianInt(values:number[],fallback=0){
+start=s.index('export function officialInspiredMonsterSettings(')
+end=s.index('\nexport function powerAdjustedItemBudget',start)
+monster_block="""function medianInt(values:number[],fallback=0){
   if(!values.length)return fallback
   const sorted=[...values].sort((a,b)=>a-b)
   return Math.round(sorted[Math.floor(sorted.length/2)])
@@ -61,22 +46,9 @@ export function applyOfficialMonsterStructure(monster:Monster,pattern:OfficialMo
   return {...monster,attacks,skills,spells,notes:[...(monster.notes||[]).filter(line=>!line.startsWith('Official-pattern structure: ')),`Official-pattern structure: generated chassis trimmed toward the sampled medians (${attacks.length} attacks, ${skills.length} skills, ${spells.length} spells). Affinity complexity is observed for reference but Species, Theme and Aestra Affinities remain authoritative.`]}
 }
 """
-if old not in s: raise SystemExit('monster official-pattern block missing')
-s=s.replace(old,new,1)
-old="""export function officialInspiredItemBudget(official:GeneratedItem[],type:ItemType,fallback:number){
-  const sample=official.filter(item=>item.source==='Official'&&item.type===type&&Number(item.cost)>0)
-  if(!sample.length)return{maxCost:fallback,note:'Official-pattern inspiration unavailable: no matching official items are currently loaded.'}
-  const costs=sample.map(item=>Number(item.cost)).sort((a,b)=>a-b)
-  const median=costs[Math.floor(costs.length/2)]
-  // Reference data nudges the requested power band instead of replacing it. This keeps
-  // Conservative/Dangerous/Legendary meaningful even when the official median is low.
-  const lower=fallback*0.75, upper=fallback*1.15
-  const blended=fallback*0.7+median*0.3
-  const centered=clampCost(Math.max(lower,Math.min(upper,blended)))
-  return{maxCost:centered,note:`Official-pattern inspiration: budget nudged toward the median cost of ${sample.length} official ${type.toLowerCase()} entries while preserving the selected power intent; item text is not copied.`}
-}
-"""
-new="""export type OfficialItemPattern={maxCost:number;sampleCount:number;martialRate:number;category?:string;range?:GeneratedItem['range'];handedness?:GeneratedItem['handedness'];qualityRate:number;note:string}
+s=s[:start]+monster_block+s[end:]
+start=s.index('export function officialInspiredItemBudget(')
+item_block="""export type OfficialItemPattern={maxCost:number;sampleCount:number;martialRate:number;category?:string;range?:GeneratedItem['range'];handedness?:GeneratedItem['handedness'];qualityRate:number;note:string}
 
 export function officialInspiredItemBudget(official:GeneratedItem[],type:ItemType,fallback:number):OfficialItemPattern{
   const sample=official.filter(item=>item.source==='Official'&&item.type===type&&Number(item.cost)>0)
@@ -112,27 +84,22 @@ export function chooseOfficialInspiredItemCandidate<T extends GeneratedItem>(can
   return [...candidates].sort((a,b)=>score(b)-score(a))[0]
 }
 """
-if old not in s: raise SystemExit('item official-pattern block missing')
-s=s.replace(old,new,1)
+s=s[:start]+item_block+'\n'
 p.write_text(s)
 
-# Wire structural profile into both generators.
 p=Path('src/App.tsx')
 s=p.read_text()
 old="import { createMonsterVariant, GeneratorPowerIntent, MonsterVariant, monsterCoherenceSummary, officialInspiredItemBudget, officialInspiredMonsterSettings, powerAdjustedItemBudget, powerAdjustedMonsterSettings } from './generatorEvolution'"
 new="import { applyOfficialMonsterStructure, chooseOfficialInspiredItemCandidate, createMonsterVariant, GeneratorPowerIntent, MonsterVariant, monsterCoherenceSummary, officialInspiredItemBudget, officialInspiredMonsterSettings, powerAdjustedItemBudget, powerAdjustedMonsterSettings } from './generatorEvolution'"
-if old not in s: raise SystemExit('evolution import missing')
-s=s.replace(old,new,1)
+if old in s:s=s.replace(old,new,1)
+elif 'applyOfficialMonsterStructure' not in s:raise SystemExit('generatorEvolution import not found')
 old="let monster=applyMonsterTheme(generateMonster({level,rank:adjusted.rank,soldierEquivalent:adjusted.soldierEquivalent,species:sp,complexity:pattern.complexity,combatStyle:pattern.style}),theme==='Auto'?undefined:theme);monster=applyMonsterSetting(monster);"
 new="let chassis=generateMonster({level,rank:adjusted.rank,soldierEquivalent:adjusted.soldierEquivalent,species:sp,complexity:pattern.complexity,combatStyle:pattern.style});if(inspiration==='Official Pattern')chassis=applyOfficialMonsterStructure(chassis,pattern);let monster=applyMonsterTheme(chassis,theme==='Auto'?undefined:theme);monster=applyMonsterSetting(monster);"
-if old not in s: raise SystemExit('monster generation chassis needle missing')
+if old not in s: raise SystemExit('monster generation needle missing')
 s=s.replace(old,new,1)
 old="let item:AppItem=type==='Weapon'&&weaponMethod==='Atlas Custom'?generateCustomWeapon({allowMartial,allowTransforming:powerIntent==='Legendary'?true:allowTransforming,preferredDamageType:damageType}):generateItem({type,maxCost:budget,allowMartial,preferredDamageType:damageType});item=applyItemTheme(item,itemTheme==='Auto'?undefined:itemTheme);"
 new="const makeCandidate=():AppItem=>type==='Weapon'&&weaponMethod==='Atlas Custom'?generateCustomWeapon({allowMartial,allowTransforming:powerIntent==='Legendary'?true:allowTransforming,preferredDamageType:damageType}):generateItem({type,maxCost:budget,allowMartial,preferredDamageType:damageType});let item:AppItem=inspiration==='Official Pattern'?chooseOfficialInspiredItemCandidate(Array.from({length:6},()=>makeCandidate()),pattern):makeCandidate();item=applyItemTheme(item,itemTheme==='Auto'?undefined:itemTheme);"
-if old not in s: raise SystemExit('item candidate generation needle missing')
+if old not in s: raise SystemExit('item generation needle missing')
 s=s.replace(old,new,1)
-old='Official Pattern centers that budget on matching official equipment already in the database without copying item text.'
-new='Official Pattern uses matching official equipment to nudge the budget and rank several fresh candidates by common martial/category/range/handedness/quality structure without copying item text.'
-s=s.replace(old,new,1)
+s=s.replace('Official Pattern centers that budget on matching official equipment already in the database without copying item text.','Official Pattern uses matching official equipment to nudge the budget and rank several fresh candidates by common martial/category/range/handedness/quality structure without copying item text.',1)
 p.write_text(s)
-# trigger v2
