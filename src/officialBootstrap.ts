@@ -38,8 +38,12 @@ function officialLibraryReady() {
 }
 
 async function applyCorrections() {
-  const { applyOfficialSourceCorrections } = await import('./officialSourceCorrections')
+  const [{ applyOfficialSourceCorrections }, { applyOfficialItemSourceCorrections }] = await Promise.all([
+    import('./officialSourceCorrections'),
+    import('./officialItemSourceCorrections'),
+  ])
   applyOfficialSourceCorrections()
+  applyOfficialItemSourceCorrections()
 }
 
 export async function ensureOfficialData() {
