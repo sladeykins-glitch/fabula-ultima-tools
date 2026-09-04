@@ -15,6 +15,7 @@ import AccessibilityTools from './AccessibilityTools'
 import DatabasePresetTools from './DatabasePresetTools'
 import DatabaseSelectionTools from './DatabaseSelectionTools'
 import DatabaseCompareTools from './DatabaseCompareTools'
+import DatabaseRecentTools from './DatabaseRecentTools'
 import './styles.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -34,5 +35,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <DatabasePresetTools />
     <DatabaseSelectionTools />
     <DatabaseCompareTools />
+    <DatabaseRecentTools />
   </React.StrictMode>,
 )
