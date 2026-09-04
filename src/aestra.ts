@@ -55,6 +55,11 @@ function replaceFirstSkill(skills:MonsterSkill[],name:string,summary:string):Mon
   const [first,...rest]=skills
   return [{...first,name,summary},...rest]
 }
+function replaceOriginSkill(skills:MonsterSkill[],name:string,summary:string):MonsterSkill[] {
+  if(!skills.length) return skills
+  const index=skills.length>1?1:0
+  return skills.map((skill,i)=>i===index?{...skill,name,summary}:skill)
+}
 function improveAffinity(current:Affinity):Affinity {
   if(current==='Vulnerable') return 'Normal'
   if(current==='Normal') return 'Resistant'
@@ -134,6 +139,116 @@ function applyNationMechanics(monster:Monster,nation:AestraNation,origin:AestraO
   return {...monster,attacks,skills,affinities,magicBonus,accuracyBonus}
 }
 
+function applyOriginMechanics(monster:Monster,nation:AestraNation,origin:AestraOrigin):Monster {
+  const attacks=[...(monster.attacks||[])]
+  let skills=[...(monster.skills||[])]
+  const affinities={...monster.affinities}
+  let hp=monster.hp, crisis=monster.crisis, mp=monster.mp
+  let magicBonus=monster.magicBonus, accuracyBonus=monster.accuracyBonus
+  let note=''
+
+  if(origin==='Military') {
+    if(nation==='Garlond') {
+      if(attacks[1]) attacks[1]=appendEffect(attacks[1],'If another Garlond ally has already acted this round, this attack deals 5 extra damage.')
+      skills=replaceOriginSkill(skills,'Combined Arms Drill','Once per round when an ally hits an enemy suffering slow or weak, this NPC gains +1 Accuracy against that enemy until the end of its next turn.')
+      accuracyBonus+=1
+      note='Garlond Military: formation discipline, suppression and coordinated fire turn individual units into parts of one state war machine.'
+    } else {
+      skills=replaceOriginSkill(skills,'Field Doctrine','Once per round after an ally acts, this NPC gains +1 to its next Check against the same target.')
+      note=`${nation} Military: trained battlefield doctrine shapes its behaviour.`
+    }
+  }
+
+  if(origin==='Civic') {
+    if(nation==='Rübenberg') {
+      skills=replaceOriginSkill(skills,'Civic Safeguard','Once per round when an ally is targeted, that ally gains +1 Defense and Magic Defense against that effect; if it misses, this NPC gains +1 to its next Check.')
+      affinities.air=improveAffinity(affinities.air)
+      note='Rübenberg Civic: public engineering and defensive infrastructure favour redirection, protection and keeping people out of harm’s way.'
+    } else if(nation==='Palmeria') {
+      skills=replaceOriginSkill(skills,'Civic Mandate','The first time each round this NPC inflicts a status effect, one ally gains +1 Magic or Accuracy until its next turn.')
+      note='Palmeria Civic: institutional authority turns learned principles into coordinated public control.'
+    }
+  }
+
+  if(origin==='Scientific') {
+    if(nation==='Garlond') {
+      if(attacks[1]) attacks[1]=appendEffect(rewriteDamage(attacks[1],pick(['bolt','ice','fire'] as DamageType[])),'After this attack resolves, this NPC suffers 5 HP loss if it missed; the prototype was built for output, not reliability.')
+      skills=replaceOriginSkill(skills,'State Prototype Trial','At the start of each round choose ice, bolt, or fire. The first attack dealing that damage this round gains +1 Accuracy and deals 5 extra damage.')
+      hp+=5; crisis=Math.floor(hp/2)
+      note='Garlond Scientific: state research prioritises battlefield output, repeatability and expendable prototype testing.'
+    } else if(nation==='Rübenberg') {
+      skills=replaceOriginSkill(skills,'Vector Calibration','After this NPC misses, its next air or bolt effect gains +2 to the relevant Check; the bonus is lost after that Check.')
+      magicBonus+=1
+      note='Rübenberg Scientific: precision engineering studies motion, airflow and repeatable calibration rather than brute-force output.'
+    } else if(nation==='Palmeria') {
+      skills=replaceOriginSkill(skills,'Empirical Thesis','Once per round after an enemy reveals a Resistance, Immunity, Absorb, or Vulnerability, this NPC gains +2 to its next Check against that enemy and may change that effect’s damage type to light, bolt, fire, or dark.')
+      magicBonus+=1
+      mp+=10
+      note='Palmeria Scientific: observation, hypothesis and magical experimentation convert discovered weaknesses into tactical advantage.'
+    }
+  }
+
+  if(origin==='Imperial' && nation==='Palmeria') {
+    if(attacks[0]) attacks[0]=appendEffect(attacks[0],'If this NPC has an allied subordinate present, this attack gains +1 Accuracy.')
+    skills=replaceOriginSkill(skills,'Imperial Command','Once per round after this NPC succeeds on a Check, one ally may gain +1 to its next Check; if that ally is lower Rank, it also gains +1 Defense until its next turn.')
+    hp+=5; crisis=Math.floor(hp/2)
+    note='Palmeria Imperial: hierarchy, prestige and command presence make the enemy stronger when fighting as the centre of an organised retinue.'
+  }
+
+  if(origin==='Market') {
+    if(nation==='Valdoria') {
+      if(attacks[1]) attacks[1]=appendEffect(attacks[1],'Against a target suffering any status effect, this attack gains +1 Accuracy as the attacker exploits distraction and crowd pressure.')
+      skills=replaceOriginSkill(skills,'Market Instinct','Once per round when another creature loses HP or MP, this NPC may gain +1 Accuracy or +1 Magic until the end of its next turn.')
+      note='Valdoria Market: survival depends on reading openings, distractions and moment-to-moment shifts in a crowded marketplace.'
+    } else if(nation==='Rübenberg') {
+      skills=replaceOriginSkill(skills,'Trade Network','The first time each round this NPC aids or protects an ally, that ally also gains +1 to its next Check.')
+      note='Rübenberg Market: commercial networks reward cooperation, positioning and reciprocal support.'
+    }
+  }
+
+  if(origin==='Black Market' && nation==='Valdoria') {
+    const contraband=pick(['poison','dark','bolt'] as DamageType[])
+    if(attacks[1]) attacks[1]=appendEffect(rewriteDamage(attacks[1],contraband),'On a hit, choose weak or shaken; the target suffers that status. After this attack is used, roll with the risk: this NPC suffers 5 HP loss if the attack missed.')
+    skills=replaceOriginSkill(skills,'Contraband Modification','Once per round before making a Check, choose +2 Accuracy or +2 Magic for that Check; after it resolves, this NPC loses 5 MP.')
+    mp=Math.max(0,mp+5)
+    note='Valdoria Black Market: illegal modifications buy sudden power at the cost of reliability, resources and personal safety.'
+  }
+
+  if(origin==='Deep Below' && nation==='Valdoria') {
+    if(attacks[1]) attacks[1]=appendEffect(rewriteDamage(attacks[1],pick(['earth','dark'] as DamageType[])),'If the target spent MP since its previous turn, this attack deals 5 extra damage.')
+    skills=replaceOriginSkill(skills,'Below the Crystal Line','The first time each round an enemy spends MP, this NPC recovers 5 MP and gains +1 Magic until the end of its next turn.')
+    affinities.earth=improveAffinity(affinities.earth)
+    note='Valdoria Deep Below: distance from ordinary habitation and crystal infrastructure produces threats that interact unnaturally with MP and power use.'
+  }
+
+  if(origin==='Wilderness') {
+    if(nation==='Garlond') {
+      if(attacks[1]) attacks[1]=appendEffect(rewriteDamage(attacks[1],pick(['ice','physical'] as DamageType[])),'Against a target suffering slow, this attack deals 5 extra damage; the frozen wastes punish anything that cannot keep moving.')
+      skills=replaceOriginSkill(skills,'Whiteout Hunter','The first time each round an enemy suffers slow, this NPC gains +1 Defense and Accuracy until the end of its next turn.')
+      affinities.ice=improveAffinity(affinities.ice)
+      note='Garlond Wilderness: the frozen exterior rewards endurance, pursuit and exploiting creatures slowed by cold or terrain.'
+    } else if(nation==='Rübenberg') {
+      skills=replaceOriginSkill(skills,'Open-Sky Current','After this NPC is missed, its next air-damage attack gains +2 Accuracy; if it hits, one ally gains +1 Defense until its next turn.')
+      note='Rübenberg Wilderness: open winds turn movement and missed attacks into changing currents of advantage.'
+    } else if(nation==='Palmeria') {
+      skills=replaceOriginSkill(skills,'Field Naturalist','The first time each round this NPC inflicts a status effect, it may learn the target’s strongest non-Normal Affinity and gain +1 to its next Check against that target.')
+      note='Palmeria Wilderness: scholarly field traditions turn observation of natural phenomena into practical combat knowledge.'
+    }
+  }
+
+  if(origin==='Lost Era') {
+    const strange=pick(['light','dark','bolt','earth'] as DamageType[])
+    if(attacks[1]) attacks[1]=appendEffect(rewriteDamage(attacks[1],strange),'The first time this attack is used each round, treat one Resistance to its damage as Normal; its actual original purpose is unknown.')
+    skills=replaceOriginSkill(skills,'Recovered Subroutine','At the start of each round choose one protocol: +1 Magic; +1 Accuracy; improve one Affinity by one step; or recover 5 MP. The visible effect suggests only a fragment of the original function survives.')
+    if(nation==='Garlond') note='Garlond Lost Era: recovered technology has been forced into military service, often without understanding the system it came from.'
+    if(nation==='Rübenberg') note='Rübenberg Lost Era: old mechanisms are studied, adapted and integrated cautiously into modern engineering.'
+    if(nation==='Palmeria') note='Palmeria Lost Era: scholars classify and theorise about ancient systems, then deliberately test those theories in practical use.'
+    if(nation==='Valdoria') note='Valdoria Lost Era: relics surface from below through salvage, private deals and black markets long before anyone fully understands them.'
+  }
+
+  return {...monster,attacks,skills,affinities,hp,crisis,mp,magicBonus,accuracyBonus,notes:[`Origin mechanics: ${note}`,...(monster.notes||[]).filter(n=>!n.startsWith('Origin mechanics: '))]}
+}
+
 function applyCrystalMechanics(monster:Monster,influence:AestraInfluence):Monster {
   const attacks=[...(monster.attacks||[])]
   const affinities={...monster.affinities}
@@ -180,6 +295,7 @@ export function applyAestraMonsterIdentity(monster:Monster,nation:AestraNation,o
     traits:[motif,...monster.traits.filter(t=>t!==motif)].slice(0,4),
   }
   result=applyNationMechanics(result,nation,origin,effectiveDepth)
+  result=applyOriginMechanics(result,nation,origin)
   result=applyCrystalMechanics(result,influence)
   result={...result,notes:[
       `Aestra: ${nation} — ${origin}.`,
@@ -188,7 +304,7 @@ export function applyAestraMonsterIdentity(monster:Monster,nation:AestraNation,o
       ...(depthNote?[depthNote]:[]),
       `Crystal influence: ${influence}. ${influenceNote}`,
       `Origin context: ${originNote}`,
-      `Aestra mechanics: national origin, regional depth and crystal state alter attacks, affinities and existing skill behaviour rather than only changing flavour.`,
+      `Aestra mechanics: nation, origin, regional depth and crystal state each alter combat behaviour while reusing the generated skill budget.`,
       ...result.notes.filter(n=>!n.startsWith('Aestra: ')&&!n.startsWith('National identity: ')&&!n.startsWith('Regional design: ')&&!n.startsWith('Valdoria depth: ')&&!n.startsWith('Crystal influence: ')&&!n.startsWith('Origin context: ')&&!n.startsWith('Aestra mechanics: '))
     ]}
   return result
