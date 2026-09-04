@@ -169,6 +169,30 @@ details { margin-top: 12px; }
 summary { cursor: pointer; color: var(--crystal-bright); font-weight: 700; }
 .smallText { font-size: .86rem; margin-top: -6px; }
 .monsterCard h3 { margin-top: 18px; }
+.monsterIdentity { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 12px; }
+.monsterIdentity span { padding:4px 8px; border:1px solid #435650; background:#0b1919; color:#cfc8b8; font-size:.78rem; text-transform:uppercase; letter-spacing:.06em; }
+.monsterIdentity span:first-child { border-color:var(--brass); color:var(--brass-bright); }
+.monsterVitals { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:6px; margin:12px 0; }
+.vital { min-height:70px; display:grid; place-items:center; align-content:center; border:1px solid #40534f; background:linear-gradient(180deg,#102120,#091616); text-align:center; }
+.vital span { color:#9da9a3; font-size:.67rem; letter-spacing:.12em; font-weight:800; }
+.vital strong { color:#f0e7d2; font-size:1.45rem; line-height:1.1; }
+.vital small { color:#d4a98e; font-size:.68rem; margin-top:2px; }
+.vital.hp { border-color:#76594e; } .vital.mp { border-color:#3f6d68; }
+.monsterAttributes { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:5px; margin:8px 0 12px; }
+.monsterAttributes span { padding:6px 4px; text-align:center; border:1px solid #314541; background:rgba(8,18,19,.72); font-size:.82rem; }
+.monsterAttributes b { color:var(--crystal); font-size:.68rem; margin-right:3px; }
+.monsterTraits { display:grid; grid-template-columns:auto 1fr; gap:10px; padding:9px 10px; border-left:3px solid var(--brass); background:rgba(195,167,108,.07); margin:10px 0 13px; }
+.monsterTraits strong { color:var(--brass-bright); } .monsterTraits span { color:#d5cebd; }
+.sectionLabel { color:#aeb7af; text-transform:uppercase; letter-spacing:.14em; font-size:.68rem; font-weight:800; margin-bottom:6px; }
+.affinityGrid { display:grid; grid-template-columns:repeat(9,minmax(0,1fr)); gap:4px; margin-bottom:13px; }
+.affinityChip { display:grid; gap:1px; padding:5px 3px; text-align:center; border:1px solid #354844; background:#0a1718; min-width:0; }
+.affinityChip b { text-transform:uppercase; font-size:.61rem; overflow:hidden; text-overflow:ellipsis; } .affinityChip small { font-size:.62rem; color:#aab2ab; }
+.affinity-vulnerable { border-color:#925f52; background:rgba(125,57,45,.16); } .affinity-vulnerable small { color:#e5a38f; }
+.affinity-resistant { border-color:#617653; background:rgba(79,105,65,.15); } .affinity-resistant small { color:#bad2a6; }
+.affinity-immune { border-color:#52716d; background:rgba(65,111,105,.16); } .affinity-immune small { color:#a8ded4; }
+.affinity-absorb { border-color:#796a96; background:rgba(95,74,128,.16); } .affinity-absorb small { color:#cbb8e8; }
+.combatHeading { padding-bottom:5px; border-bottom:1px solid rgba(195,167,108,.28); text-transform:uppercase; letter-spacing:.08em; font-size:1rem; }
+.monsterLore { margin-top:16px; border:1px solid #3c4d49; background:rgba(6,15,16,.5); padding:9px 10px; } .monsterLore summary { color:#bdb397; } .lorePanel { margin-top:8px; display:grid; gap:6px; } .lorePanel .note { margin:0; font-size:.86rem; }
 .attackEffect { margin-top: 6px; color: #cfc9bb; font-size: .9rem; }
 .skillList, .spellList { display: grid; gap: 8px; }
 .skillBox, .spellBox { padding: 10px 11px; border: 1px solid #3b4d49; border-radius: 3px; background: rgba(7,17,18,.72); }
@@ -204,6 +228,9 @@ a { color: var(--crystal-bright); }
   .preview { min-height: 260px; }
   .databaseSummary { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .cardTitle { flex-wrap: wrap; }
+  .monsterVitals { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .monsterAttributes { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .affinityGrid { grid-template-columns:repeat(3,minmax(0,1fr)); }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
