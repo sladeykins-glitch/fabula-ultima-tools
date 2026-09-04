@@ -16,7 +16,6 @@ jobs:
         with:
           node-version: 20
       - run: python3 scripts/apply-generator-evolution-wrapper.py
-      - run: nl -ba src/App.tsx | sed -n '386,392p'
       - run: npm install --no-audit --no-fund --prefer-offline
       - run: npm run build
       - name: Commit migration
