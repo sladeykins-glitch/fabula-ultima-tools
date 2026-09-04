@@ -7,3 +7,31 @@
 .dbSelectButton.active { background:#312e81; border-color:#818cf8; color:#eef2ff; }
 .dbSelectedCard { outline:2px solid rgba(129,140,248,.6); outline-offset:2px; }
 @media (max-width:650px) { .dbSelectionBar { align-items:stretch; } .dbSelectionBar > span { flex-basis:100%; margin-right:0; } .dbSelectionBar button { flex:1 1 130px; } }
+@media print {
+  body.dbPrintSelection { background:#fff !important; color:#000 !important; }
+  body.dbPrintSelection header,
+  body.dbPrintSelection nav,
+  body.dbPrintSelection .toolbar,
+  body.dbPrintSelection .databaseSummary,
+  body.dbPrintSelection .dbBrowseBar,
+  body.dbPrintSelection .dbQuickActions,
+  body.dbPrintSelection .dbQualityBar,
+  body.dbPrintSelection .dbPresetTools,
+  body.dbPrintSelection .dbSelectionBar,
+  body.dbPrintSelection .dbPaginationTools,
+  body.dbPrintSelection .dbBackupTools,
+  body.dbPrintSelection .cardActions { display:none !important; }
+  body.dbPrintSelection .card:not(.dbSelectedCard) { display:none !important; }
+  body.dbPrintSelection .shell { width:100% !important; margin:0 !important; padding:0 !important; }
+  body.dbPrintSelection .grid { display:block !important; }
+  body.dbPrintSelection .dbSelectedCard { display:block !important; break-inside:avoid; page-break-inside:avoid; outline:none !important; box-shadow:none !important; background:#fff !important; color:#000 !important; border:1px solid #999 !important; margin:0 0 12px !important; }
+  body.dbPrintSelection .dbSelectedCard * { color:inherit; }
+  body.dbPrintSelection .dbSelectedCard .muted { color:#444 !important; }
+  body.dbPrintSelection .dbSelectedCard .stats b,
+  body.dbPrintSelection .dbSelectedCard .dice span,
+  body.dbPrintSelection .dbSelectedCard .affinities span,
+  body.dbPrintSelection .dbSelectedCard .skillBox,
+  body.dbPrintSelection .dbSelectedCard .spellBox,
+  body.dbPrintSelection .dbSelectedCard .attack,
+  body.dbPrintSelection .dbSelectedCard .tacticsBox { background:#fff !important; border-color:#bbb !important; }
+}
