@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import './databaseCardCopyTools.css'
 
 type Kind = 'monster' | 'item'
 
