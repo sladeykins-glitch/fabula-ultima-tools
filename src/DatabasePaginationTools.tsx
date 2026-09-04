@@ -35,9 +35,20 @@ function eligibleCards(section: HTMLElement) {
     .filter(card => !card.classList.contains('dbHiddenByFavorite'))
 }
 
+function cardSignature(kind: Kind, card: HTMLElement) {
+  if (card.dataset.dbRecordId) return card.dataset.dbRecordId
+  const name = card.querySelector('h2')?.textContent?.trim() || ''
+  const source = card.querySelector('.source')?.textContent?.trim() || ''
+  const detail = kind === 'monster'
+    ? card.querySelector('.muted')?.textContent?.trim() || ''
+    : card.querySelector('.itemMeta')?.textContent?.trim() || ''
+  return `${kind}|${name}|${source}|${detail}`
+}
+
 export default function DatabasePaginationTools() {
   useEffect(() => {
     let applying = false
+    let scheduled = false
     let lastSignatures: Record<Kind, string> = { monster: '', item: '' }
 
     const apply = (resetChanged = false) => {
@@ -51,7 +62,7 @@ export default function DatabasePaginationTools() {
         if (!kind) return
 
         const cards = eligibleCards(section)
-        const signature = cards.map(card => card.querySelector('h2')?.textContent?.trim() || '').join('|')
+        const signature = cards.map(card => cardSignature(kind, card)).join('|')
         if (resetChanged && lastSignatures[kind] && signature !== lastSignatures[kind]) state[kind].page = 1
         lastSignatures[kind] = signature
 
@@ -129,7 +140,14 @@ export default function DatabasePaginationTools() {
     }
 
     apply(false)
-    const observer = new MutationObserver(() => requestAnimationFrame(() => apply(true)))
+    const observer = new MutationObserver(() => {
+      if (scheduled) return
+      scheduled = true
+      requestAnimationFrame(() => {
+        scheduled = false
+        apply(true)
+      })
+    })
     observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] })
     document.addEventListener('click', onClick)
     document.addEventListener('change', onChange)
