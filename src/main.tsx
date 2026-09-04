@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import DatabaseOverlay from './DatabaseOverlay'
 import DatabaseBackupTools from './DatabaseBackupTools'
+import DatabaseBrowseTools from './DatabaseBrowseTools'
 import './styles.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -10,5 +11,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <App />
     <DatabaseOverlay />
     <DatabaseBackupTools />
+    <DatabaseBrowseTools />
   </React.StrictMode>,
 )
