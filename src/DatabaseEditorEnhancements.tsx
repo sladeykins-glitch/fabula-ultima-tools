@@ -1,5 +1,8 @@
 import { useEffect } from 'react'
 
+type Kind = 'monster' | 'item'
+type OpenRecord = { kind: Kind; id: string } | null
+
 function fieldSnapshot(modal: HTMLElement) {
   return Array.from(modal.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea'))
     .map(control => {
@@ -9,14 +12,12 @@ function fieldSnapshot(modal: HTMLElement) {
     .join('\u001f')
 }
 
-function storedRecordForModal(modal: HTMLElement) {
-  const title = modal.querySelector('h2')?.textContent || ''
-  const isMonster = title.endsWith('— Monster') || !!modal.querySelector('.dbAffinityGrid')
-  const key = isMonster ? 'fu-monsters' : 'fu-items'
-  const visibleName = title.replace(/\s+—\s+(Monster|Item)\s*$/, '').trim()
+function loadRecord(open: OpenRecord) {
+  if (!open) return null
+  const key = open.kind === 'monster' ? 'fu-monsters' : 'fu-items'
   try {
     const records = JSON.parse(localStorage.getItem(key) || '[]')
-    return Array.isArray(records) ? records.find(record => record?.name === visibleName) : null
+    return Array.isArray(records) ? records.find(record => record?.id === open.id) || null : null
   } catch {
     return null
   }
@@ -25,6 +26,29 @@ function storedRecordForModal(modal: HTMLElement) {
 export default function DatabaseEditorEnhancements() {
   useEffect(() => {
     const initialSnapshots = new WeakMap<HTMLElement, string>()
+    let lastOpen: OpenRecord = null
+
+    const isDirty = (modal: HTMLElement) => {
+      const initial = initialSnapshots.get(modal)
+      return initial != null && initial !== fieldSnapshot(modal)
+    }
+
+    const updateDirtyIndicator = (modal: HTMLElement) => {
+      const header = modal.querySelector<HTMLElement>('.dbModalHeader > div')
+      if (!header) return
+      let indicator = header.querySelector<HTMLElement>('.dbDirtyIndicator')
+      const dirty = isDirty(modal)
+      if (dirty) {
+        if (!indicator) {
+          indicator = document.createElement('span')
+          indicator.className = 'dbDirtyIndicator'
+          indicator.textContent = 'Unsaved changes'
+          header.appendChild(indicator)
+        }
+      } else {
+        indicator?.remove()
+      }
+    }
 
     const ensureModal = () => {
       document.querySelectorAll<HTMLElement>('.dbModal').forEach(modal => {
@@ -37,25 +61,27 @@ export default function DatabaseEditorEnhancements() {
           copy.textContent = 'Copy stored JSON'
           actions.insertBefore(copy, actions.firstChild)
         }
+        updateDirtyIndicator(modal)
       })
-    }
-
-    const isDirty = (modal: HTMLElement) => {
-      const initial = initialSnapshots.get(modal)
-      return initial != null && initial !== fieldSnapshot(modal)
     }
 
     const confirmDiscard = (modal: HTMLElement) => !isDirty(modal) || window.confirm('Discard unsaved changes?')
 
     const onClickCapture = (event: MouseEvent) => {
       const target = event.target as HTMLElement
-      const modal = target.closest<HTMLElement>('.dbModal')
+      const opener = target.closest<HTMLElement>('[data-db-open][data-db-record-id]')
+      if (opener) {
+        const kind = opener.dataset.dbOpen as Kind | undefined
+        const id = opener.dataset.dbRecordId
+        if ((kind === 'monster' || kind === 'item') && id) lastOpen = { kind, id }
+      }
 
+      const modal = target.closest<HTMLElement>('.dbModal')
       const copy = target.closest<HTMLButtonElement>('[data-db-copy-json]')
       if (copy && modal) {
         event.preventDefault()
         event.stopPropagation()
-        const record = storedRecordForModal(modal)
+        const record = loadRecord(lastOpen)
         const text = JSON.stringify(record || {}, null, 2)
         navigator.clipboard?.writeText(text).then(() => {
           const original = copy.textContent
@@ -72,6 +98,11 @@ export default function DatabaseEditorEnhancements() {
         event.stopPropagation()
         event.stopImmediatePropagation()
       }
+    }
+
+    const onInput = (event: Event) => {
+      const modal = (event.target as HTMLElement).closest<HTMLElement>('.dbModal')
+      if (modal) updateDirtyIndicator(modal)
     }
 
     const onMouseDownCapture = (event: MouseEvent) => {
@@ -115,6 +146,8 @@ export default function DatabaseEditorEnhancements() {
     const observer = new MutationObserver(ensureModal)
     observer.observe(document.body, { childList: true, subtree: true })
     document.addEventListener('click', onClickCapture, true)
+    document.addEventListener('input', onInput, true)
+    document.addEventListener('change', onInput, true)
     document.addEventListener('mousedown', onMouseDownCapture, true)
     window.addEventListener('keydown', onKeyCapture, true)
     window.addEventListener('beforeunload', onBeforeUnload)
@@ -122,6 +155,8 @@ export default function DatabaseEditorEnhancements() {
     return () => {
       observer.disconnect()
       document.removeEventListener('click', onClickCapture, true)
+      document.removeEventListener('input', onInput, true)
+      document.removeEventListener('change', onInput, true)
       document.removeEventListener('mousedown', onMouseDownCapture, true)
       window.removeEventListener('keydown', onKeyCapture, true)
       window.removeEventListener('beforeunload', onBeforeUnload)
