@@ -135,3 +135,4 @@ old='Official Pattern centers that budget on matching official equipment already
 new='Official Pattern uses matching official equipment to nudge the budget and rank several fresh candidates by common martial/category/range/handedness/quality structure without copying item text.'
 s=s.replace(old,new,1)
 p.write_text(s)
+# trigger v2
