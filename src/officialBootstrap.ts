@@ -37,12 +37,21 @@ function officialLibraryReady() {
   return REQUIRED_ITEM_PREFIXES.every(prefix => officialItemIds.some(id => id.startsWith(prefix)))
 }
 
+async function applyCorrections() {
+  const { applyOfficialSourceCorrections } = await import('./officialSourceCorrections')
+  applyOfficialSourceCorrections()
+}
+
 export async function ensureOfficialData() {
   const currentVersion = localStorage.getItem(VERSION_KEY)
-  if (currentVersion === OFFICIAL_DATA_VERSION && officialLibraryReady()) return false
+  if (currentVersion === OFFICIAL_DATA_VERSION && officialLibraryReady()) {
+    await applyCorrections()
+    return false
+  }
 
   const { seedOfficialData } = await import('./officialSeedData')
   seedOfficialData()
+  await applyCorrections()
   localStorage.setItem(VERSION_KEY, OFFICIAL_DATA_VERSION)
   return true
 }
