@@ -1,26 +1,22 @@
-import { officialWeapons } from './officialData'
-import { officialCoreRareWeapons } from './officialCoreRareWeapons'
-import { officialAtlasRareWeapons } from './officialAtlasRareWeapons'
-import { officialOtherItems } from './officialOtherItems'
-import { officialMonsters } from './officialMonsters'
-import { officialCoreBestiaryRemaining } from './officialCoreBestiaryRemaining'
-import { officialHighFantasyMonsters } from './officialHighFantasyMonsters'
-import { officialNaturalFantasyMonsters } from './officialNaturalFantasyMonsters'
-import { officialTechnoFantasyMonsters } from './officialTechnoFantasyMonsters'
-import { officialTechnoFantasySupplement } from './officialTechnoFantasySupplement'
-import { applyOfficialSourceCorrections } from './officialSourceCorrections'
+const OFFICIAL_DATA_VERSION = '2026-09-04-natural-techno-v3'
+const VERSION_KEY = 'fu-official-data-version'
 
-function mergeOfficial<T extends { id: string }>(key: string, official: T[]) {
+function hasOfficialData(key: string) {
   try {
-    const existing = JSON.parse(localStorage.getItem(key) || '[]') as T[]
-    const officialIds = new Set(official.map(entry => entry.id))
-    const userEntries = existing.filter(entry => !officialIds.has(entry.id))
-    localStorage.setItem(key, JSON.stringify([...official, ...userEntries]))
+    const records = JSON.parse(localStorage.getItem(key) || '[]')
+    return Array.isArray(records) && records.some(record => record?.source === 'Official')
   } catch {
-    localStorage.setItem(key, JSON.stringify(official))
+    return false
   }
 }
 
-mergeOfficial('fu-items', [...officialWeapons, ...officialCoreRareWeapons, ...officialAtlasRareWeapons, ...officialOtherItems])
-mergeOfficial('fu-monsters', [...officialMonsters, ...officialCoreBestiaryRemaining, ...officialHighFantasyMonsters, ...officialNaturalFantasyMonsters, ...officialTechnoFantasyMonsters, ...officialTechnoFantasySupplement])
-applyOfficialSourceCorrections()
+export async function ensureOfficialData() {
+  const currentVersion = localStorage.getItem(VERSION_KEY)
+  const ready = hasOfficialData('fu-monsters') && hasOfficialData('fu-items')
+  if (currentVersion === OFFICIAL_DATA_VERSION && ready) return false
+
+  const { seedOfficialData } = await import('./officialSeedData')
+  seedOfficialData()
+  localStorage.setItem(VERSION_KEY, OFFICIAL_DATA_VERSION)
+  return true
+}
