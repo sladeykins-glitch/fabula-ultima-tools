@@ -118,13 +118,16 @@ export default function DatabaseBrowseTools() {
 
           const title = card.querySelector<HTMLElement>('.cardTitle')
           if (!title) return
+          const actionTarget = title.querySelector<HTMLElement>('.cardActions') || title
           let star = title.querySelector<HTMLButtonElement>('.dbFavoriteButton')
           if (!star) {
             star = document.createElement('button')
             star.type = 'button'
             star.className = 'dbFavoriteButton'
             star.dataset.dbFavorite = kind
-            title.appendChild(star)
+            actionTarget.appendChild(star)
+          } else if (star.parentElement !== actionTarget) {
+            actionTarget.appendChild(star)
           }
           star.dataset.dbFavoriteKey = key
           star.dataset.dbFavoriteName = name
