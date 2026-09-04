@@ -4,6 +4,11 @@ import './databaseOverlay.css'
 type Kind = 'monster' | 'item'
 type Selected = { kind: Kind; record: any } | null
 
+const damageTypes = ['physical','air','bolt','dark','earth','fire','ice','light','poison']
+const affinityValues = ['Normal','Vulnerable','Resistant','Immune','Absorb']
+const dieValues = [6,8,10,12]
+const combatStyles = ['Mixed','Brute','Defender','Controller','Spellcaster','Assassin','Support']
+
 function loadRecords(kind: Kind): any[] {
   try {
     return JSON.parse(localStorage.getItem(kind === 'monster' ? 'fu-monsters' : 'fu-items') || '[]')
@@ -50,8 +55,17 @@ export default function DatabaseOverlay() {
       if (!name) return
       const record = loadRecords(kind).find(entry => entry.name === name)
       if (!record) return
+      const copy = JSON.parse(JSON.stringify(record))
+      if (kind === 'monster') {
+        copy.traitsText = Array.isArray(record.traits) ? record.traits.join(', ') : ''
+        copy.attributes ||= { dex: 8, ins: 8, mig: 8, wlp: 8 }
+        copy.affinities ||= Object.fromEntries(damageTypes.map(type => [type, 'Normal']))
+        copy.attacks ||= []
+        copy.skills ||= []
+        copy.spells ||= []
+      }
       setSelected({ kind, record })
-      setDraft({ ...record, traitsText: Array.isArray(record.traits) ? record.traits.join(', ') : '' })
+      setDraft(copy)
     }
 
     document.addEventListener('click', onClick)
@@ -75,6 +89,15 @@ export default function DatabaseOverlay() {
 
   const set = (key: string, value: any) => setDraft((current: any) => ({ ...current, [key]: value }))
   const number = (key: string, value: string) => set(key, Number(value) || 0)
+  const setNested = (parent: string, key: string, value: any) => setDraft((current: any) => ({ ...current, [parent]: { ...(current[parent] || {}), [key]: value } }))
+  const setArrayField = (key: string, index: number, field: string, value: any) => setDraft((current: any) => ({
+    ...current,
+    [key]: (current[key] || []).map((entry: any, i: number) => i === index ? { ...entry, [field]: value } : entry),
+  }))
+  const removeArrayRow = (key: string, index: number) => setDraft((current: any) => ({ ...current, [key]: (current[key] || []).filter((_: any, i: number) => i !== index) }))
+  const addAttack = () => set('attacks', [...(draft.attacks || []), { name: 'New Attack', formula: 'DEX + MIG', damageType: 'physical', effect: '' }])
+  const addSkill = () => set('skills', [...(draft.skills || []), { name: 'New Skill', summary: '' }])
+  const addSpell = () => set('spells', [...(draft.spells || []), { name: 'New Spell', mp: '10', target: 'One creature', duration: 'Instantaneous', effect: '' }])
 
   const save = () => {
     const records = loadRecords(selected.kind)
@@ -108,18 +131,60 @@ export default function DatabaseOverlay() {
 
       {isOfficial && <p className="dbOfficialNotice">Official book entries are protected. Saving changes creates a Custom copy, leaving the imported reference untouched.</p>}
 
-      {selected.kind === 'monster' ? <div className="dbEditGrid">
-        <label>Name<input value={draft.name || ''} onChange={event => set('name', event.target.value)} /></label>
-        <label>Level<input type="number" min="1" max="99" value={draft.level ?? 1} onChange={event => number('level', event.target.value)} /></label>
-        <label>Rank<select value={draft.rank || 'Soldier'} onChange={event => set('rank', event.target.value)}><option>Soldier</option><option>Elite</option><option>Champion</option></select></label>
-        <label>Species<select value={draft.species || 'Monster'} onChange={event => set('species', event.target.value)}><option>Beast</option><option>Construct</option><option>Demon</option><option>Elemental</option><option>Humanoid</option><option>Monster</option><option>Plant</option><option>Undead</option></select></label>
-        <label>HP<input type="number" min="0" value={draft.hp ?? 0} onChange={event => number('hp', event.target.value)} /></label>
-        <label>MP<input type="number" min="0" value={draft.mp ?? 0} onChange={event => number('mp', event.target.value)} /></label>
-        <label>Initiative<input type="number" value={draft.initiative ?? 0} onChange={event => number('initiative', event.target.value)} /></label>
-        <label>Defense<input type="number" value={draft.defense ?? 0} onChange={event => number('defense', event.target.value)} /></label>
-        <label>Magic Defense<input type="number" value={draft.magicDefense ?? 0} onChange={event => number('magicDefense', event.target.value)} /></label>
-        <label className="dbWide">Traits<textarea value={draft.traitsText || ''} onChange={event => set('traitsText', event.target.value)} placeholder="trait one, trait two, trait three" /></label>
-      </div> : <div className="dbEditGrid">
+      {selected.kind === 'monster' ? <>
+        <div className="dbEditGrid">
+          <label>Name<input value={draft.name || ''} onChange={event => set('name', event.target.value)} /></label>
+          <label>Level<input type="number" min="1" max="99" value={draft.level ?? 1} onChange={event => number('level', event.target.value)} /></label>
+          <label>Rank<select value={draft.rank || 'Soldier'} onChange={event => set('rank', event.target.value)}><option>Soldier</option><option>Elite</option><option>Champion</option></select></label>
+          <label>Species<select value={draft.species || 'Monster'} onChange={event => set('species', event.target.value)}><option>Beast</option><option>Construct</option><option>Demon</option><option>Elemental</option><option>Humanoid</option><option>Monster</option><option>Plant</option><option>Undead</option></select></label>
+          <label>Combat Style<select value={draft.combatStyle || 'Mixed'} onChange={event => set('combatStyle', event.target.value)}>{combatStyles.map(style => <option key={style}>{style}</option>)}</select></label>
+          <label>Turns / Round<input type="number" min="1" max="10" value={draft.turnsPerRound ?? 1} onChange={event => number('turnsPerRound', event.target.value)} /></label>
+          <label>HP<input type="number" min="0" value={draft.hp ?? 0} onChange={event => number('hp', event.target.value)} /></label>
+          <label>MP<input type="number" min="0" value={draft.mp ?? 0} onChange={event => number('mp', event.target.value)} /></label>
+          <label>Initiative<input type="number" value={draft.initiative ?? 0} onChange={event => number('initiative', event.target.value)} /></label>
+          <label>Defense<input type="number" value={draft.defense ?? 0} onChange={event => number('defense', event.target.value)} /></label>
+          <label>Magic Defense<input type="number" value={draft.magicDefense ?? 0} onChange={event => number('magicDefense', event.target.value)} /></label>
+          <label>Accuracy Bonus<input type="number" value={draft.accuracyBonus ?? 0} onChange={event => number('accuracyBonus', event.target.value)} /></label>
+          <label>Magic Bonus<input type="number" value={draft.magicBonus ?? 0} onChange={event => number('magicBonus', event.target.value)} /></label>
+          <label className="dbWide">Traits<textarea value={draft.traitsText || ''} onChange={event => set('traitsText', event.target.value)} placeholder="trait one, trait two, trait three" /></label>
+        </div>
+
+        <h3 className="dbSectionTitle">Attributes</h3>
+        <div className="dbCompactGrid">
+          {(['dex','ins','mig','wlp'] as const).map(attr => <label key={attr}>{attr.toUpperCase()}<select value={draft.attributes?.[attr] || 8} onChange={event => setNested('attributes', attr, Number(event.target.value))}>{dieValues.map(die => <option key={die} value={die}>d{die}</option>)}</select></label>)}
+        </div>
+
+        <h3 className="dbSectionTitle">Affinities</h3>
+        <div className="dbAffinityGrid">
+          {damageTypes.map(type => <label key={type}>{type}<select value={draft.affinities?.[type] || 'Normal'} onChange={event => setNested('affinities', type, event.target.value)}>{affinityValues.map(value => <option key={value}>{value}</option>)}</select></label>)}
+        </div>
+
+        <div className="dbSectionHeader"><h3>Basic Attacks</h3><button onClick={addAttack}>+ Add Attack</button></div>
+        <div className="dbArrayList">{(draft.attacks || []).map((attack: any, index: number) => <div className="dbArrayRow" key={index}>
+          <input value={attack.name || ''} onChange={event => setArrayField('attacks', index, 'name', event.target.value)} placeholder="Attack name" />
+          <input value={attack.formula || ''} onChange={event => setArrayField('attacks', index, 'formula', event.target.value)} placeholder="DEX + MIG" />
+          <select value={attack.damageType || 'physical'} onChange={event => setArrayField('attacks', index, 'damageType', event.target.value)}>{damageTypes.map(type => <option key={type}>{type}</option>)}</select>
+          <textarea value={attack.effect || ''} onChange={event => setArrayField('attacks', index, 'effect', event.target.value)} placeholder="Damage and special effect" />
+          <button className="danger" onClick={() => removeArrayRow('attacks', index)}>Remove</button>
+        </div>)}</div>
+
+        <div className="dbSectionHeader"><h3>NPC Skills / Special Rules</h3><button onClick={addSkill}>+ Add Skill</button></div>
+        <div className="dbArrayList">{(draft.skills || []).map((skill: any, index: number) => <div className="dbArrayRow dbTwoField" key={index}>
+          <input value={skill.name || ''} onChange={event => setArrayField('skills', index, 'name', event.target.value)} placeholder="Skill name" />
+          <textarea value={skill.summary || ''} onChange={event => setArrayField('skills', index, 'summary', event.target.value)} placeholder="Rule text" />
+          <button className="danger" onClick={() => removeArrayRow('skills', index)}>Remove</button>
+        </div>)}</div>
+
+        <div className="dbSectionHeader"><h3>Spells</h3><button onClick={addSpell}>+ Add Spell</button></div>
+        <div className="dbArrayList">{(draft.spells || []).map((spell: any, index: number) => <div className="dbArrayRow dbSpellRow" key={index}>
+          <input value={spell.name || ''} onChange={event => setArrayField('spells', index, 'name', event.target.value)} placeholder="Spell name" />
+          <input value={spell.mp || ''} onChange={event => setArrayField('spells', index, 'mp', event.target.value)} placeholder="10" />
+          <input value={spell.target || ''} onChange={event => setArrayField('spells', index, 'target', event.target.value)} placeholder="Target" />
+          <input value={spell.duration || ''} onChange={event => setArrayField('spells', index, 'duration', event.target.value)} placeholder="Duration" />
+          <textarea value={spell.effect || ''} onChange={event => setArrayField('spells', index, 'effect', event.target.value)} placeholder="Spell effect" />
+          <button className="danger" onClick={() => removeArrayRow('spells', index)}>Remove</button>
+        </div>)}</div>
+      </> : <div className="dbEditGrid">
         <label>Name<input value={draft.name || ''} onChange={event => set('name', event.target.value)} /></label>
         <label>Cost (zenit)<input type="number" min="0" value={draft.cost ?? 0} onChange={event => number('cost', event.target.value)} /></label>
         <label>Type<input value={draft.type || ''} disabled /></label>
