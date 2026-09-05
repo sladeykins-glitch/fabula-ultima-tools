@@ -6,7 +6,7 @@ type Region = typeof regions[number]
 
 function findRegion(target: EventTarget | null): Region | null {
   const element = target instanceof Element ? target : null
-  const select = element?.closest('select') as HTMLSelectElement | null
+  const select = element?.closest('select[data-aestra-region-select]') as HTMLSelectElement | null
   if (select && regions.includes(select.value as Region)) return select.value as Region
   return null
 }
@@ -19,7 +19,7 @@ export default function AestraRegionalTheme() {
       else delete root.dataset.aestraRegion
     }
     const syncFromPage = () => {
-      const candidates = Array.from(document.querySelectorAll('select')) as HTMLSelectElement[]
+      const candidates = Array.from(document.querySelectorAll('select[data-aestra-region-select]')) as HTMLSelectElement[]
       const match = candidates.find(select => regions.includes(select.value as Region))
       apply(match ? match.value as Region : null)
     }
