@@ -1,0 +1,15 @@
+from pathlib import Path
+p=Path('src/App.tsx'); s=p.read_text()
+anchor='''function createBlankItem(): AppItem {\n  return { id:`custom-item-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, name:'New Item', type:'Accessory', source:'Custom', cost:100, martial:false, category:'Accessory', effect:'Describe this item effect.', breakdown:['Created from scratch.'] }\n}\n'''
+addition=anchor+'''\nfunction normalizeRealMaterialIdentity(item: AppItem): AppItem {\n  if (!item.material) return item\n  const identity = `Material identity: ${item.material.name} (Natural Fantasy).`\n  const breakdown = (item.breakdown || []).filter(line => !line.startsWith('Concept material: ') && !line.startsWith('Material identity: '))\n  return { ...item, breakdown:[...breakdown, identity] }\n}\n'''
+if anchor not in s: raise SystemExit('blank item anchor missing')
+s=s.replace(anchor,addition,1)
+old="""  const style = monster.combatStyle || 'Mixed', librarySource = monsterLibrarySource(monster)"""
+new="""  const style = monster.combatStyle || 'Mixed', librarySource = monsterLibrarySource(monster)\n  const isAestraRecord = notes.some(note => /^(Aestra|Crystal influence:|Regional design:|Origin mechanics:|Valdoria depth:|Environment:|Exposure:)/.test(note))"""
+if old not in s: raise SystemExit('monster card const anchor missing')
+s=s.replace(old,new,1)
+s=s.replace('''{notes.length > 0 && <details className="monsterLore"><summary>Aestra lore & design notes</summary>''','''{notes.length > 0 && <details className="monsterLore"><summary>{isAestraRecord?'Aestra lore & design notes':'Rules & design notes'}</summary>''',1)
+s=s.replace('''return applyItemSetting(item)};const candidates''','''return normalizeRealMaterialIdentity(applyItemSetting(item))};const candidates''',1)
+s=s.replace('''const rerollItem=(part:ItemRerollPart)=>setResult(current=>current?applyItemSetting(rerollItemPart(current,part) as AppItem):current)''','''const rerollItem=(part:ItemRerollPart)=>setResult(current=>current?normalizeRealMaterialIdentity(applyItemSetting(rerollItemPart(current,part) as AppItem)):current)''',1)
+s=s.replace('''return applyItemSetting({...current,material,origin:`Crafted using ${material.name.toLowerCase()}, a ${material.nature.toLowerCase()} material selected from the Natural Fantasy material tables.`,breakdown:[...(current.breakdown||[]).filter(line=>!line.startsWith('Material: ')&&!line.startsWith('Concept material: ')&&!line.startsWith('Material identity: ')),`Material: ${material.name} (authoritative material identity; does not alter equipment cost by itself).`]})})''','''return normalizeRealMaterialIdentity(applyItemSetting({...current,material,origin:`Crafted using ${material.name.toLowerCase()}, a ${material.nature.toLowerCase()} material selected from the Natural Fantasy material tables.`,breakdown:[...(current.breakdown||[]).filter(line=>!line.startsWith('Material: ')&&!line.startsWith('Concept material: ')&&!line.startsWith('Material identity: ')),`Material: ${material.name} (authoritative material identity; does not alter equipment cost by itself).`]}))})''',1)
+p.write_text(s)
