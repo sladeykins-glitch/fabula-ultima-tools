@@ -260,7 +260,7 @@ export default function App() {
 
 function MonsterCard({ monster, onDelete, database=false, favorite=false, onFavorite, selected=false, onSelect }: { monster:Monster; onDelete?:()=>void; database?:boolean; favorite?:boolean; onFavorite?:()=>void; selected?:boolean; onSelect?:()=>void }) {
   const skills = monster.skills || [], spells = monster.spells || [], notes = monster.notes || [], attacks = monster.attacks || []
-  const descriptionNotes = notes.filter(note => /^(Description:|Appearance:|Behaviour:|Habitat & signs:|Combat read:|GM hook:)/.test(note))
+  const descriptionNotes = notes.filter(note => /^(Description:|Appearance:|Behaviour:|Ecology:|Habitat & signs:|Quirk:|Combat read:|GM hook:)/.test(note))
   const affinities = monster.affinities || Object.fromEntries(damageTypes.map(t => [t, 'Normal'])) as Monster['affinities']
   const style = monster.combatStyle || 'Mixed', librarySource = monsterLibrarySource(monster)
   const isAestraRecord = notes.some(note => /^(Aestra|Crystal influence:|Regional design:|Origin mechanics:|Valdoria depth:|Environment:|Exposure:)/.test(note))
