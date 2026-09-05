@@ -272,3 +272,13 @@ a { color: var(--crystal-bright); }
   html { scroll-behavior: auto; }
   *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
+
+
+/* Detailed generated monster field descriptions */
+.monsterDescription{margin:10px 0 12px;border:1px solid rgba(139,198,190,.24);border-radius:10px;background:rgba(9,20,24,.46);overflow:hidden}
+.monsterDescription>summary{cursor:pointer;padding:9px 11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;font-size:.76rem;color:var(--accent,#9fd7cf)}
+.monsterDescriptionBody{padding:0 11px 8px;display:grid;gap:7px}
+.monsterDescriptionBody p{margin:0;display:grid;grid-template-columns:minmax(92px,auto) 1fr;gap:8px;line-height:1.42}
+.monsterDescriptionBody strong{font-size:.76rem;text-transform:uppercase;letter-spacing:.03em;opacity:.82}
+.monsterDescriptionBody span{opacity:.94}
+@media(max-width:640px){.monsterDescriptionBody p{grid-template-columns:1fr;gap:2px}}

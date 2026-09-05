@@ -260,6 +260,7 @@ export default function App() {
 
 function MonsterCard({ monster, onDelete, database=false, favorite=false, onFavorite, selected=false, onSelect }: { monster:Monster; onDelete?:()=>void; database?:boolean; favorite?:boolean; onFavorite?:()=>void; selected?:boolean; onSelect?:()=>void }) {
   const skills = monster.skills || [], spells = monster.spells || [], notes = monster.notes || [], attacks = monster.attacks || []
+  const descriptionNotes = notes.filter(note => /^(Description:|Appearance:|Behaviour:|Habitat & signs:|Combat read:|GM hook:)/.test(note))
   const affinities = monster.affinities || Object.fromEntries(damageTypes.map(t => [t, 'Normal'])) as Monster['affinities']
   const style = monster.combatStyle || 'Mixed', librarySource = monsterLibrarySource(monster)
   const isAestraRecord = notes.some(note => /^(Aestra|Crystal influence:|Regional design:|Origin mechanics:|Valdoria depth:|Environment:|Exposure:)/.test(note))
@@ -271,6 +272,7 @@ function MonsterCard({ monster, onDelete, database=false, favorite=false, onFavo
     <div className="monsterVitals"><div className="vital hp"><span>HP</span><strong>{monster.hp}</strong><small>Crisis {monster.crisis ?? Math.floor(monster.hp/2)}</small></div><div className="vital mp"><span>MP</span><strong>{monster.mp}</strong></div><div className="vital"><span>DEF</span><strong>{monster.defense}</strong></div><div className="vital"><span>M.DEF</span><strong>{monster.magicDefense}</strong></div><div className="vital"><span>INIT</span><strong>{monster.initiative}</strong></div><div className="vital"><span>TURN</span><strong>{monster.turnsPerRound || 1}</strong></div></div>
     <div className="monsterAttributes"><span><b>DEX</b> d{monster.attributes.dex}</span><span><b>INS</b> d{monster.attributes.ins}</span><span><b>MIG</b> d{monster.attributes.mig}</span><span><b>WLP</b> d{monster.attributes.wlp}</span><span><b>ACC</b> +{monster.accuracyBonus ?? Math.floor(monster.level/10)}</span><span><b>MAG</b> +{monster.magicBonus ?? Math.floor(monster.level/10)}</span></div>
     <div className="monsterTraits"><strong>Traits</strong><span>{(monster.traits || []).join(' · ')}</span></div>
+    {descriptionNotes.length > 0 && <details className="monsterDescription" open={!database}><summary>Field description</summary><div className="monsterDescriptionBody">{descriptionNotes.map((note,i)=>{const split=note.indexOf(':');return <p key={i}><strong>{note.slice(0,split)}</strong><span>{note.slice(split+1).trim()}</span></p>})}</div></details>}
     <div className="affinityBlock"><div className="sectionLabel">Affinities</div><div className="affinityGrid">{damageTypes.map(t=><span key={t} className={`affinityChip affinity-${String(affinities[t]).toLowerCase()}`}><b>{t}</b><small>{affinities[t]}</small></span>)}</div></div>
     <div className="tacticsBox"><strong>Tactics — {style}</strong><span>{combatTactics[style]}</span></div><h3 className="combatHeading">Attacks</h3>
     {attacks.map((a,i)=><div key={i} className="attack"><b>{a.name}</b> — {a.formula} {a.damageType}{a.effect && <div className="attackEffect">Effect: {a.effect}</div>}</div>)}
