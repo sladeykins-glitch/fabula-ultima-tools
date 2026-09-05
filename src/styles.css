@@ -302,3 +302,15 @@ a { color: var(--crystal-bright); }
 .monsterArtPromptHint{margin:9px 1px 0;font-size:.73rem;line-height:1.45;opacity:.68}
 .monsterArtPromptHint code{font-size:.72rem}
 @media(max-width:760px){.monsterArtPromptControls{grid-template-columns:1fr}.monsterArtPromptActions button{flex:1 1 auto}.monsterArtPromptPreview{min-height:185px}}
+
+
+.monsterVisualIdentity { margin:10px 0 12px; border:1px solid rgba(195,167,108,.28); border-radius:4px; background:rgba(195,167,108,.045); overflow:hidden; }
+.monsterVisualIdentity > summary { padding:9px 10px; color:var(--brass-bright); text-transform:uppercase; letter-spacing:.08em; font-size:.76rem; }
+.monsterVisualIdentity > summary small { margin-left:6px; color:var(--muted); text-transform:none; letter-spacing:.02em; font-weight:400; }
+.monsterVisualIdentityGrid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; padding:0 10px 10px; }
+.monsterVisualIdentityGrid p { margin:0; padding:8px; display:grid; gap:3px; border:1px solid #344742; background:rgba(8,18,19,.72); min-width:0; }
+.monsterVisualIdentityGrid strong { color:var(--crystal); font-size:.66rem; text-transform:uppercase; letter-spacing:.08em; }
+.monsterVisualIdentityGrid span { color:#d9d2c2; font-size:.82rem; line-height:1.35; }
+.monsterCard[data-db-record-kind="monster"] .monsterVisualIdentity { display:none; }
+@media (max-width:760px) { .monsterVisualIdentityGrid { grid-template-columns:1fr 1fr; } }
+@media (max-width:480px) { .monsterVisualIdentityGrid { grid-template-columns:1fr; } }

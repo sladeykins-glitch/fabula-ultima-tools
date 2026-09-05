@@ -100,6 +100,18 @@ export interface MonsterSpell {
   effect: string
 }
 
+export interface MonsterVisualIdentity {
+  silhouette: string
+  bodyPlan: string
+  surface: string
+  palette: string
+  face: string
+  signatureFeature: string
+  relicFeature: string
+  scale: string
+  environmentalMotif: string
+}
+
 export interface Monster {
   id: string
   name: string
@@ -126,6 +138,7 @@ export interface Monster {
   skills: MonsterSkill[]
   spells: MonsterSpell[]
   notes: string[]
+  visualIdentity?: MonsterVisualIdentity
   combatStyle?: CombatStyle
 }
 
