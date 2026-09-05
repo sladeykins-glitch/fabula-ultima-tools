@@ -1,10 +1,10 @@
 import { generateMonster } from './rules'
-import type { CombatStyle, Complexity, Monster, Rank } from './rules'
+import type { CombatStyle, Complexity, Monster, MonsterFamilyIdentity, MonsterVisualIdentity, Rank } from './rules'
 import type { GeneratedItem, ItemType } from './items'
 import { applyMonsterTheme, type MonsterTheme } from './monsterThemeEngine'
 
 export type GeneratorPowerIntent = 'Conservative' | 'Standard' | 'Dangerous' | 'Legendary'
-export type MonsterVariant = 'Minion' | 'Elite' | 'Champion' | 'Corrupted' | 'Elemental' | 'Role Shift'
+export type MonsterVariant = 'Minion' | 'Elite' | 'Champion' | 'Corrupted' | 'Elemental' | 'Role Shift' | 'Juvenile' | 'Mature' | 'Elder' | 'Domesticated' | 'Regional Strain'
 
 const styles:CombatStyle[]=['Mixed','Brute','Defender','Controller','Spellcaster','Assassin','Support']
 const themes:MonsterTheme[]=['Wild','Infernal','Arcane','Industrial','Floral','Spectral','Draconic','Aquatic']
@@ -33,6 +33,29 @@ function cleanFamilyName(name:string){
     .trim()
 }
 
+function slug(value:string){return value.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,48)||'creature'}
+function ensureFamilyIdentity(base:Monster):MonsterFamilyIdentity{
+  if(base.family)return base.family
+  const familyName=cleanFamilyName(base.name)||'Creature'
+  return {familyId:`family-${slug(familyName)}-${base.id.slice(-8)}`,familyName,baseMonsterId:base.id,baseMonsterName:base.name,form:'Base',generation:0}
+}
+function familyVisualIdentity(base:Monster,generated:Monster,variant:MonsterVariant):MonsterVisualIdentity|undefined{
+  const original=base.visualIdentity
+  if(!original)return generated.visualIdentity
+  const next={...original}
+  if(variant==='Juvenile')return {...next,scale:'smaller than the adult form',signatureFeature:`a less-developed version of ${original.signatureFeature}`,relicFeature:`an immature or partially formed version of ${original.relicFeature}`}
+  if(variant==='Mature')return {...next,signatureFeature:`a fully developed ${original.signatureFeature}`}
+  if(variant==='Elder')return {...next,scale:`large for its family; ${original.scale}`,surface:`aged, scarred and weathered ${original.surface}`,signatureFeature:`an exaggerated elder form of ${original.signatureFeature}`}
+  if(variant==='Domesticated')return {...next,face:`${original.face}, with a calmer and more readable expression`,surface:`well-kept or harness-worn ${original.surface}`,signatureFeature:`a controlled, practical version of ${original.signatureFeature}`}
+  if(variant==='Corrupted')return {...next,palette:`${original.palette}, disrupted by black-violet corruption`,face:`${original.face}, distorted by one obvious corrupted asymmetry`,relicFeature:`${original.relicFeature}, visibly corrupted and unstable`}
+  if(variant==='Elemental')return {...next,surface:`${original.surface}, overlaid by elemental adaptation`,signatureFeature:`${original.signatureFeature}, transformed into an elemental display structure`}
+  if(variant==='Champion')return {...next,scale:'larger and more imposing than the common family form',signatureFeature:`an apex expression of ${original.signatureFeature}`}
+  if(variant==='Elite')return {...next,signatureFeature:`a veteran, reinforced expression of ${original.signatureFeature}`}
+  if(variant==='Minion')return {...next,scale:'smaller and slighter than the common family form'}
+  if(variant==='Regional Strain')return {...next,signatureFeature:`a regional adaptation built around ${original.signatureFeature}`}
+  return next
+}
+
 function gimmickNote(monster:Monster){
   return (monster.notes||[]).find(line=>line.startsWith('Core gimmick: '))
 }
@@ -42,6 +65,7 @@ function signatureAttack(base:Monster){
 }
 
 function inheritFamilyIdentity(base:Monster,generated:Monster,variant:MonsterVariant):Monster{
+  const family=ensureFamilyIdentity(base)
   const signature=signatureAttack(base)
   const baseGimmick=gimmickNote(base)
   const inheritedTraits=[...(base.traits||[]).slice(0,2),...(generated.traits||[])].filter((value,index,array)=>array.indexOf(value)===index).slice(0,4)
@@ -57,7 +81,9 @@ function inheritFamilyIdentity(base:Monster,generated:Monster,variant:MonsterVar
   }
   notes.push(`Variant lineage: ${variant} evolution of ${base.name}. Species, family traits and signature combat motif are inherited rather than regenerated from scratch.`)
   if(signature) notes.push(`Inherited signature: ${signature.name} (${signature.damageType} damage).`)
-  return {...generated,traits:inheritedTraits,attacks,notes}
+  const formName:Record<MonsterVariant,string>={Minion:'Lesser',Elite:'Elite',Champion:'Apex',Corrupted:'Corrupted',Elemental:'Elemental','Role Shift':'Role Shift',Juvenile:'Juvenile',Mature:'Mature',Elder:'Elder',Domesticated:'Domesticated','Regional Strain':'Regional Strain'}
+  const familyIdentity={...family,form:formName[variant],generation:family.generation+1}
+  return {...generated,traits:inheritedTraits,attacks,notes,visualIdentity:familyVisualIdentity(base,generated,variant),family:familyIdentity}
 }
 
 export function createMonsterVariant(base:Monster,variant:MonsterVariant):Monster{
@@ -78,7 +104,7 @@ export function createMonsterVariant(base:Monster,variant:MonsterVariant):Monste
   const generated=generateMonster({level,rank,soldierEquivalent,species:base.species,complexity:rank==='Champion'?'Crunchy':'Standard',combatStyle:style})
   const themed=applyMonsterTheme(generated,theme)
   const familyName=cleanFamilyName(base.name) || 'Creature'
-  const suffix:Record<MonsterVariant,string>={Minion:'Lesser',Elite:'Ascendant',Champion:'Apex',Corrupted:'Corrupted',Elemental:'Elemental', 'Role Shift':'Variant'}
+  const suffix:Record<MonsterVariant,string>={Minion:'Lesser',Elite:'Ascendant',Champion:'Apex',Corrupted:'Corrupted',Elemental:'Elemental','Role Shift':'Variant',Juvenile:'Juvenile',Mature:'Mature',Elder:'Elder',Domesticated:'Domesticated','Regional Strain':'Regional'}
   const inherited=inheritFamilyIdentity(base,themed,variant)
   return {...inherited,name:`${suffix[variant]} ${familyName}`}
 }

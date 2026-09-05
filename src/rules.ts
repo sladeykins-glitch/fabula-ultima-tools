@@ -112,6 +112,15 @@ export interface MonsterVisualIdentity {
   environmentalMotif: string
 }
 
+export interface MonsterFamilyIdentity {
+  familyId: string
+  familyName: string
+  baseMonsterId: string
+  baseMonsterName: string
+  form: string
+  generation: number
+}
+
 export interface Monster {
   id: string
   name: string
@@ -139,6 +148,7 @@ export interface Monster {
   spells: MonsterSpell[]
   notes: string[]
   visualIdentity?: MonsterVisualIdentity
+  family?: MonsterFamilyIdentity
   combatStyle?: CombatStyle
 }
 
