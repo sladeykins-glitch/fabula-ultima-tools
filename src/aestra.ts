@@ -321,6 +321,12 @@ export function refreshAestraMonsterLabel(monster:Monster,nation:AestraNation):M
   return {...monster,name:nationalName,traits:[motif,...(monster.traits||[]).filter(t=>t!==motif)].slice(0,4)}
 }
 
+export function refreshAestraMonsterTraits(monster:Monster,nation:AestraNation):Monster {
+  const p=aestraNations[nation], motif=pick(p.motifs)
+  const nationalMotifs=new Set(Object.values(aestraNations).flatMap(profile=>profile.motifs))
+  return {...monster,traits:[motif,...(monster.traits||[]).filter(t=>!nationalMotifs.has(t))].slice(0,4)}
+}
+
 export function refreshAestraAffinities(monster:Monster,nation:AestraNation,influence:AestraInfluence='Stable',depth:ValdoriaDepth='Market'):Monster {
   const affinities={...monster.affinities}
   if(nation==='Garlond'){affinities.ice=improveAffinity(affinities.ice);affinities.fire=worsenAffinity(affinities.fire)}
