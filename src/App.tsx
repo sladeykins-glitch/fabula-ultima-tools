@@ -259,11 +259,11 @@ export default function App() {
 }
 
 
-type ArtPromptPreset = 'Aestra Bestiary' | 'JRPG Concept Art' | 'Dark Fantasy' | 'Painterly Bestiary' | 'Grotesque Horror' | 'Retro-Fantasy Sci-Fi'
+type ArtPromptPreset = 'Aestra Ghibli Abyss'
 type ArtPromptMode = 'Short' | 'Full' | 'Variant' | 'Permutation'
 type ArtPromptFraming = 'Portrait' | 'Full Body' | 'Battle Scene'
 
-const artPromptPresets: ArtPromptPreset[] = ['Aestra Bestiary','JRPG Concept Art','Dark Fantasy','Painterly Bestiary','Grotesque Horror','Retro-Fantasy Sci-Fi']
+const artPromptPresets: ArtPromptPreset[] = ['Aestra Ghibli Abyss']
 const artPromptModes: ArtPromptMode[] = ['Short','Full','Variant','Permutation']
 const artPromptFramings: ArtPromptFraming[] = ['Portrait','Full Body','Battle Scene']
 
@@ -299,15 +299,8 @@ function monsterAestraArtDirection(monster: Monster) {
   return ''
 }
 
-function artPresetText(preset: ArtPromptPreset) {
-  switch (preset) {
-    case 'Aestra Bestiary': return 'Aestra bestiary concept art, grim eco-apocalyptic JRPG fantasy, ancient relic technology, weathered materials, painterly creature design, atmospheric worldbuilding'
-    case 'JRPG Concept Art': return 'dark fantasy JRPG concept art, polished creature design, detailed fantasy illustration'
-    case 'Dark Fantasy': return 'dark fantasy creature concept art, grim atmosphere, moody lighting, detailed materials'
-    case 'Painterly Bestiary': return 'painterly fantasy bestiary illustration, refined brushwork, highly detailed creature painting'
-    case 'Grotesque Horror': return 'grotesque horror creature concept art, unsettling anatomy, ominous atmosphere, intricate organic textures'
-    case 'Retro-Fantasy Sci-Fi': return 'retro-fantasy science-fiction creature concept art, relic-tech mood, weathered machinery, stylized but detailed design'
-  }
+function artPresetText(_preset: ArtPromptPreset) {
+  return 'Studio Ghibli-inspired and Made in Abyss-inspired fantasy creature concept art, hand-painted anime aesthetic, whimsical yet eerie, beautiful but dangerous natural world, lush environmental storytelling, soft painterly backgrounds, expressive silhouette, rounded organic shapes contrasted with strange relic technology, delicate linework, atmospheric depth, adventurous melancholy, mysterious ancient ecology, charming at first glance but unsettling in the details'
 }
 
 function artFramingText(framing: ArtPromptFraming) {
@@ -336,7 +329,7 @@ function buildMonsterArtPrompt(monster: Monster, preset: ArtPromptPreset, mode: 
   const ratio = artFramingRatio(framing)
   const regional = monsterAestraArtDirection(monster)
   const identity = `${monster.rank.toLowerCase()} ${theme.toLowerCase()} ${monster.species.toLowerCase()}`
-  const finish = `highly detailed, strong silhouette, coherent anatomy, polished concept art, no text, no labels --ar ${ratio}`
+  const finish = `cinematic hand-painted anime illustration, tactile natural textures, restrained detail, expressive creature acting, storybook beauty mixed with abyssal unease, strong readable silhouette, coherent anatomy, no text, no labels --ar ${ratio}`
 
   if (mode === 'Short') return [style,regional,frame,monster.name,identity,`traits: ${traits}`,promptSentence(appearance),`visible ${damage} power`,promptSentence(habitat),finish].filter(Boolean).join(', ')
   if (mode === 'Variant') return [style,regional,frame,`monster concept art of ${monster.name}`,identity,description,appearance,`behaviour: ${promptSentence(behaviour)}`,`ecology: ${promptSentence(ecology)}`,`memorable detail: ${promptSentence(quirk || hook)}`,`visible ${damage} energy`,finish].filter(Boolean).join(', ')
@@ -350,7 +343,7 @@ function MonsterCard({ monster, onDelete, database=false, favorite=false, onFavo
   const affinities = monster.affinities || Object.fromEntries(damageTypes.map(t => [t, 'Normal'])) as Monster['affinities']
   const style = monster.combatStyle || 'Mixed', librarySource = monsterLibrarySource(monster)
   const isAestraRecord = notes.some(note => /^(Aestra|Crystal influence:|Regional design:|Origin mechanics:|Valdoria depth:|Environment:|Exposure:)/.test(note))
-  const [artPreset,setArtPreset] = useState<ArtPromptPreset>('Aestra Bestiary'), [artMode,setArtMode] = useState<ArtPromptMode>('Full'), [artFraming,setArtFraming] = useState<ArtPromptFraming>('Full Body'), [artCopied,setArtCopied] = useState('')
+  const [artPreset,setArtPreset] = useState<ArtPromptPreset>('Aestra Ghibli Abyss'), [artMode,setArtMode] = useState<ArtPromptMode>('Full'), [artFraming,setArtFraming] = useState<ArtPromptFraming>('Full Body'), [artCopied,setArtCopied] = useState('')
   const artPrompt = buildMonsterArtPrompt(monster,artPreset,artMode,artFraming)
   const copyArtPrompt = async (mode:ArtPromptMode=artMode) => {
     const text=buildMonsterArtPrompt(monster,artPreset,mode,artFraming)
@@ -366,10 +359,10 @@ function MonsterCard({ monster, onDelete, database=false, favorite=false, onFavo
     <div className="monsterTraits"><strong>Traits</strong><span>{(monster.traits || []).join(' · ')}</span></div>
     {descriptionNotes.length > 0 && <details className="monsterDescription" open={!database}><summary>Field description</summary><div className="monsterDescriptionBody">{descriptionNotes.map((note,i)=>{const split=note.indexOf(':');return <p key={i}><strong>{note.slice(0,split)}</strong><span>{note.slice(split+1).trim()}</span></p>})}</div></details>}
     {!database && <details className="monsterArtPrompt" open><summary>Artwork prompt <small>Midjourney-ready</small></summary><div className="monsterArtPromptBody">
-      <div className="monsterArtPromptControls"><label><span>Style</span><select className="compactSelect" value={artPreset} onChange={e=>setArtPreset(e.target.value as ArtPromptPreset)}>{artPromptPresets.map(option=><option key={option}>{option}</option>)}</select></label><label><span>Mode</span><select className="compactSelect" value={artMode} onChange={e=>setArtMode(e.target.value as ArtPromptMode)}>{artPromptModes.map(option=><option key={option}>{option}</option>)}</select></label><label><span>Framing</span><select className="compactSelect" value={artFraming} onChange={e=>setArtFraming(e.target.value as ArtPromptFraming)}>{artPromptFramings.map(option=><option key={option}>{option}</option>)}</select></label></div>
+      <div className="monsterArtPromptControls"><label><span>Global art style</span><select className="compactSelect" value={artPreset} onChange={e=>setArtPreset(e.target.value as ArtPromptPreset)} disabled>{artPromptPresets.map(option=><option key={option}>{option}</option>)}</select></label><label><span>Mode</span><select className="compactSelect" value={artMode} onChange={e=>setArtMode(e.target.value as ArtPromptMode)}>{artPromptModes.map(option=><option key={option}>{option}</option>)}</select></label><label><span>Framing</span><select className="compactSelect" value={artFraming} onChange={e=>setArtFraming(e.target.value as ArtPromptFraming)}>{artPromptFramings.map(option=><option key={option}>{option}</option>)}</select></label></div>
       <textarea className="monsterArtPromptPreview" readOnly value={artPrompt} rows={8} onFocus={e=>e.currentTarget.select()} aria-label="Generated artwork prompt" />
       <div className="monsterArtPromptActions"><button type="button" className="primary" onClick={()=>void copyArtPrompt()}>Copy current prompt</button><button type="button" onClick={()=>void copyArtPrompt('Short')}>Short</button><button type="button" onClick={()=>void copyArtPrompt('Full')}>Full</button><button type="button" onClick={()=>void copyArtPrompt('Variant')}>Variant</button><button type="button" onClick={()=>void copyArtPrompt('Permutation')}>Permutation</button>{artCopied && <span className="artPromptStatus" role="status">{artCopied}</span>}</div>
-      <p className="monsterArtPromptHint">Built from this monster’s appearance, behaviour, ecology, habitat, traits and Aestra regional identity. Paste it into Midjourney and add your own <code>--sref</code> or reference image when desired.</p>
+      <p className="monsterArtPromptHint">Every monster uses the same Studio Ghibli-inspired / Made in Abyss-inspired Aestra art direction for visual consistency. The prompt then layers this creature’s appearance, behaviour, ecology, habitat, traits and regional identity on top.</p>
     </div></details>}
     <div className="affinityBlock"><div className="sectionLabel">Affinities</div><div className="affinityGrid">{damageTypes.map(t=><span key={t} className={`affinityChip affinity-${String(affinities[t]).toLowerCase()}`}><b>{t}</b><small>{affinities[t]}</small></span>)}</div></div>
     <div className="tacticsBox"><strong>Tactics — {style}</strong><span>{combatTactics[style]}</span></div><h3 className="combatHeading">Attacks</h3>
