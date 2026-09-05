@@ -264,18 +264,19 @@ function finishTheme(monster:Monster, theme:MonsterTheme, primary:DamageType, st
     else skills=[phase]
   }
   const baseNotes=cleanThemeNotes(monster.notes||[])
+  const themedTraits=opts.traits ? unique([...shuffled(p.traits).slice(0,3), ...(monster.traits||[]).slice(0,1)]).slice(0,4) : monster.traits
   const gimmick=`Core gimmick: ${capital(primary)} damage sets up ${status}; ${style.toLowerCase()} abilities exploit that setup.`
   const combatLoop=`Combat loop: establish ${status} with the setup attack or spell, exploit it with the payoff attack or role skill${monster.rank==='Champion'?', then escalate the same loop through Crisis':''}.`
   const phaseNote=monster.rank==='Champion' ? `Champion phase: ${theme} identity intensifies on first entering Crisis instead of introducing an unrelated mechanic.` : undefined
   return {
     ...monster,
     name:opts.name ? speciesAwareName(monster,p,theme) : monster.name,
-    traits:opts.traits ? unique([...shuffled(p.traits).slice(0,3), ...(monster.traits||[]).slice(0,1)]).slice(0,4) : monster.traits,
+    traits:themedTraits,
     attacks:opts.attacks ? themedAttacks(monster.attacks||[],p,primary,secondary,status,style) : monster.attacks,
     spells:opts.spells ? themedSpells(monster.spells||[],p,primary,status,style) : monster.spells,
     skills,
     affinities:opts.affinities ? thematicAffinities(monster,theme,primary) : monster.affinities,
-    notes:[...detailedMonsterNotes({...monster,traits:opts.traits ? unique([...shuffled(p.traits).slice(0,3), ...(monster.traits||[]).slice(0,1)]).slice(0,4) : monster.traits},theme,p,primary,status),`Theme: ${theme}. ${p.flavour}`,gimmick,combatLoop,...(phaseNote?[phaseNote]:[]),...baseNotes],
+    notes:[...detailedMonsterNotes({...monster,traits:themedTraits},theme,p,primary,status),`Theme: ${theme}. ${p.flavour}`,gimmick,combatLoop,...(phaseNote?[phaseNote]:[]),...baseNotes],
   }
 }
 
@@ -287,7 +288,11 @@ export function applyMonsterTheme(monster: Monster, requested?: MonsterTheme): M
 
 export function rerollMonsterPart(monster:Monster, part:MonsterRerollPart):Monster {
   const currentTheme=themeFromMonster(monster)
-  if(part==='traits') return {...monster,traits:unique(shuffled(profiles[currentTheme].traits).slice(0,2))}
+  if(part==='traits') {
+    const {primary,status}=gimmickFromMonster(monster,currentTheme)
+    const nextTraits=unique(shuffled(profiles[currentTheme].traits).slice(0,2))
+    return finishTheme({...monster,traits:nextTraits},currentTheme,primary,status,{name:false,attacks:false,skills:false,spells:false,traits:false,affinities:false})
+  }
   if(part==='theme') {
     const nextTheme=pickDifferent(monsterThemes,currentTheme)
     const {primary,status}=chooseGimmick(profiles[nextTheme],monster.combatStyle||'Mixed')
